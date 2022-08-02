@@ -1,0 +1,22 @@
+import { Rings } from "react-loader-spinner";
+
+export function RingLoader(props) {
+	return (
+		<Rings
+			{...{
+				color: window
+					.getComputedStyle(document.documentElement)
+					.getPropertyValue("--text-bright-accent"),
+				height: 100,
+				width: 110,
+				...{ ...props },
+			}}
+		/>
+	);
+}
+
+function Loading() {
+	return <div>Loading ...</div>;
+}
+
+export default Loading;

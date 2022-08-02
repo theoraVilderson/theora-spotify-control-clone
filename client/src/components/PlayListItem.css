@@ -1,0 +1,4 @@
+.playListItem.active,
+.playListItem:hover {
+	color: var(--text-base);
+}

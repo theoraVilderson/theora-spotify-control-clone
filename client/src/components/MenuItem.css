@@ -1,0 +1,21 @@
+.menuitem::before {
+	content: "";
+	position: absolute;
+	height: 100%;
+	background-color: var(--text-bright-accent);
+	width: 0;
+	border-radius: 10px;
+	transition: 0s;
+	left: 0;
+}
+.menuitem {
+	position: relative;
+}
+.menuitem:hover::before,
+.menuitem.active::before {
+	transition: 0.3s ease-in;
+	width: 5px;
+}
+.menuitem:hover {
+	color: var(--text-base);
+}

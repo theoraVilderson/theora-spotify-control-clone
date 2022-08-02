@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+	--text-base: #fff;
+	--text-subdued: #a7a7a7;
+	--background-base: #121212;
+	--background-highlight: #1a1a1a;
+	--background-press: #000;
+	--background-elevated-base: #242424;
+	--background-elevated-highlight: #2a2a2a;
+	--background-elevated-press: #000;
+	--text-bright-accent: #1ed760;
+}
+body {
+	color: var(--text-subdued);
+}
+.activeColor {
+	color: var(--text-base);
+}
+.activeColorHover:hover {
+	color: var(--text-base);
+}
+input[type="text"]::placeholder {
+	color: var(--text-subdued);
+}
