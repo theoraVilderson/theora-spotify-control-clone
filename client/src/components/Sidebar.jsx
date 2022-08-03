@@ -15,20 +15,21 @@ import { BsFillVolumeUpFill } from "@react-icons/all-files/bs/BsFillVolumeUpFill
 import { BsMusicNoteList } from "@react-icons/all-files/bs/BsMusicNoteList";
 import { FaDesktop } from "@react-icons/all-files/fa/FaDesktop";
 
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "./Sidebar.css";
 import MenuItem from "./MenuItem";
 import VolumeRange from "./VolumeRange";
 import UserPlayLists from "./UserPlayLists";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import defaultPlayListImg from "../imgs/defaultPlayList.png";
 
 function Sidebar() {
 	const [globalData, dispatch] = useGlobalContext();
-	const { userInfo } = globalData;
+	const { userInfo, activeMenu } = globalData;
 	const fetcher = useFetcher([globalData, dispatch]);
+	const { pathname } = useLocation();
 	const menuItems = [
 		{
 			id: 1,
@@ -61,7 +62,16 @@ function Sidebar() {
 			name: "Podcasts",
 		},
 	];
+	const activeMenuId = useMemo(() => {
+		const path = decodeURIComponent(pathname.slice(1)).toLowerCase().trim();
+		const res = menuItems.find((e) => e.name.toLowerCase() === path);
 
+		return res?.id ?? (!path ? 1 : "");
+	}, [pathname]);
+
+	useEffect(() => {
+		dispatch({ type: actionTypes.SET_ACTIVE_MENU, payload: activeMenuId });
+	}, [activeMenuId]);
 	return (
 		<aside className="sidebar flex-col min-w-[130px] w-2/5 hidden md:flex  md:min-w-[280px] max-w-[350px] md:w-1/5 min-h-screen">
 			<div className="sidebar__head flex items-center justify-between gap-4 sidebarSpace">
@@ -103,6 +113,7 @@ function Sidebar() {
 							key={item.id}
 							Icon={item.icon}
 							name={item.name}
+							active={item.id === activeMenu}
 						/>
 					);
 				})}

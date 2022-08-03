@@ -7,17 +7,14 @@ import { FaPlus } from "@react-icons/all-files/fa/FaPlus";
 
 import { Scrollbar } from "react-scrollbars-custom";
 import { RingLoader } from "./Loading";
+import { useParams } from "react-router-dom";
 
 function UserPlayLists() {
+	const { playlistId } = useParams();
+
 	const [globalData, dispatch] = useGlobalContext();
-	const { userInfo } = globalData;
+	const { userInfo, playlists, activePlayList } = globalData;
 	const fetcher = useFetcher([globalData, dispatch]);
-	const [playListItems, setPlayListItems] = useState({
-		test: {
-			name: "this is a long text for it",
-			id: "test",
-		},
-	});
 
 	const [nextLinkParmas, setNextLinkParams] = useState(null);
 	const [totalPlaylist, setTotalPlaylist] = useState("");
@@ -30,13 +27,13 @@ function UserPlayLists() {
 			return;
 		}
 
-		const lastRes = playListItems;
+		const lastRes = playlists;
 
 		e.data.result.items.forEach((e) => {
-			if (!playListItems[e.id]) lastRes[e.id] = e;
+			if (!playlists[e.id]) lastRes[e.id] = e;
 		});
 
-		setPlayListItems(lastRes);
+		dispatch({ type: actionTypes.SET_PLAYISTS, payload: lastRes });
 		let nextLink = e.data.result.next;
 		nextLink = !nextLink ? null : new URL(nextLink).search.slice(1);
 		setNextLinkParams(nextLink);
@@ -66,8 +63,13 @@ function UserPlayLists() {
 			onLoadMore();
 		}
 	};
+
 	useEffect(() => {
-		if (!userInfo.id) return;
+		dispatch({ type: actionTypes.SET_ACTIVE_PLAYIST, payload: playlistId });
+	}, [playlistId]);
+
+	useEffect(() => {
+		if (!userInfo?.id) return;
 		fetcher(`/api/playlists?userId=${userInfo.id}&limit=10`)
 			.then(onPlyalistHandler)
 			.catch((e) => {
@@ -94,8 +96,14 @@ function UserPlayLists() {
 				onUpdate={onNewLoad}
 			>
 				<div>
-					{Object.values(playListItems).map((item) => {
-						return <PlayListItem key={item.id} {...item} />;
+					{Object.values(playlists).map((item) => {
+						return (
+							<PlayListItem
+								active={item.id === activePlayList}
+								key={item.id}
+								{...item}
+							/>
+						);
 					})}
 				</div>
 				{!loadingPlayistDone && (

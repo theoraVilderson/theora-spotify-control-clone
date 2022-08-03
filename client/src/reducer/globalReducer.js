@@ -3,20 +3,26 @@ import { cookieHandler } from "../libs/cookieHandler";
 export const initialValue = {
 	userInfo: {},
 	tokens: {},
-	paylists: [],
+	playlists: {},
 	paused: false,
 	loginUrl: null,
 	loginChallange: null,
+	activePlayList: null,
+	activeMusic: null,
+	activeMenu: null,
 };
 
 export const actionTypes = {
 	SET_TOKENS: "SET_TOKENS",
 	SET_USERINFO: "SET_USERINFO",
-	SET_PAYLISTS: "SET_PAYLISTS",
+	SET_PLAYISTS: "SET_PLAYISTS",
 	SET_PAUSED: "SET_PAUSED",
 	SET_LOGIN_LINK: "SET_LOGIN_LINK",
 	SET_LOGIN_CHALLANGE: "SET_LOGIN_CHALLANGE",
 	LOG_OUT_USER: "LOG_OUT_USER",
+	SET_ACTIVE_PLAYIST: "SET_ACTIVE_PLAYIST",
+	SET_ACTIVE_MUSIC: "SET_ACTIVE_MUSIC",
+	SET_ACTIVE_MENU: "SET_ACTIVE_MENU",
 };
 
 const reducer = (state, { type, payload } = {}) => {
@@ -26,6 +32,10 @@ const reducer = (state, { type, payload } = {}) => {
 		SET_LOGIN_CHALLANGE,
 		SET_USERINFO,
 		LOG_OUT_USER,
+		SET_PLAYISTS,
+		SET_ACTIVE_PLAYIST,
+		SET_ACTIVE_MUSIC,
+		SET_ACTIVE_MENU,
 	} = actionTypes;
 
 	switch (type) {
@@ -37,6 +47,14 @@ const reducer = (state, { type, payload } = {}) => {
 			return { ...state, loginChallange: payload };
 		case SET_USERINFO:
 			return { ...state, userInfo: payload };
+		case SET_PLAYISTS:
+			return { ...state, playists: payload };
+		case SET_ACTIVE_PLAYIST:
+			return { ...state, activePlayList: payload };
+		case SET_ACTIVE_MUSIC:
+			return { ...state, activeMusic: payload };
+		case SET_ACTIVE_MENU:
+			return { ...state, activeMenu: payload };
 		case LOG_OUT_USER:
 			cookieHandler.delete("accessToken");
 			cookieHandler.delete("refreshToken");

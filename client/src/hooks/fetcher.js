@@ -18,6 +18,8 @@ export default function useFetcher([, dispatch] = []) {
 					dispatch({ type: actionTypes.LOG_OUT_USER });
 					// null means go to login!
 					return null;
+				} else if (e.data.error) {
+					alert("Error: " + e.data.error);
 				}
 
 				return e;

@@ -62,7 +62,11 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/callback" element={<AfterLogin />} />
-            <Route path="/" element={accessToken ? <Home /> : <Login />} />
+            <Route
+              path={"/playlist/:playlistId"}
+              element={accessToken ? <Home /> : <Login />}
+            />
+            <Route path={"*"} element={accessToken ? <Home /> : <Login />} />
           </Routes>
         </BrowserRouter>
       )}

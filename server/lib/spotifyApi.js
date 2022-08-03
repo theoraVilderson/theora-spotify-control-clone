@@ -62,9 +62,9 @@ class SpotifyApi {
 	}
 	handleGlobalErrors(e) {
 		let error = {};
-		if (e.response.data.error.status == "401") {
+		if (e?.response?.data?.error?.status == "401") {
 			error = { error: "TOKEN_IS_NOT_VALID" };
-		} else if (e.response.data.error.status == "429") {
+		} else if (e?.response?.data?.error?.status == "429") {
 			error = { error: "HAS_EXCEEDED_RATE_LIMITS" };
 		}
 
