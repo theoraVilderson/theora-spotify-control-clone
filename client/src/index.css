@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root,
+*::after,
+*::before {
 	--text-base: #fff;
 	--text-subdued: #a7a7a7;
 	--background-base: #121212;

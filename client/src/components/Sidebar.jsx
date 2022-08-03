@@ -74,6 +74,7 @@ function Sidebar() {
 	}, [activeMenuId]);
 	return (
 		<aside className="sidebar flex-col min-w-[130px] w-2/5 hidden md:flex  md:min-w-[280px] max-w-[350px] md:w-1/5 min-h-screen">
+			{/*head */}
 			<div className="sidebar__head flex items-center justify-between gap-4 sidebarSpace">
 				<Link to="/">
 					<svg
@@ -90,6 +91,7 @@ function Sidebar() {
 
 				<BsThreeDots className="w-6 h-6 activeColor cursor-pointer" />
 			</div>
+			{/*Search */}
 			<div
 				className=" flex items-center gap-4 py-5 rounded-lg sidebarSpace my-2 pl-[7px] ml-[7px] box-boarder"
 				styled={{
@@ -120,6 +122,7 @@ function Sidebar() {
 			</div>
 			<UserPlayLists />
 
+			{/*Player Section 1*/}
 			<div className="flex flex-col gap-3 pb-2">
 				<div className="flex  items-center sidebarSpace gap-3">
 					<img

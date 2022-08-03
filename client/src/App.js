@@ -16,6 +16,7 @@ import useFetcher from "./hooks/fetcher";
 function App() {
   const [loadingDone, setLoadingDone] = useState(false);
   const [globalData, dispatch] = useGlobalContext();
+  console.log(globalData);
   const {
     tokens: { accessToken },
   } = globalData;
@@ -54,6 +55,8 @@ function App() {
     }
   }, [accessToken]);
 
+  const Page = accessToken ? Home : Login;
+
   return (
     <div className="App">
       {!loadingDone ? (
@@ -61,12 +64,25 @@ function App() {
       ) : (
         <BrowserRouter>
           <Routes>
-            <Route path="/callback" element={<AfterLogin />} />
+            <Route path={"/callback"} element={<AfterLogin />} />
             <Route
-              path={"/playlist/:playlistId"}
-              element={accessToken ? <Home /> : <Login />}
+              path="/playlist/:playlist"
+              element={<Page feedType={"Playlist"} />}
             />
-            <Route path={"*"} element={accessToken ? <Home /> : <Login />} />
+            <Route
+              path="/album/:albumId"
+              element={<Page feedType={"Album"} />}
+            />
+            <Route
+              path="/track/:trackId"
+              element={<Page feedType={"Track"} />}
+            />
+            <Route
+              path="/artist/:artistId"
+              element={<Page feedType={"Artist"} />}
+            />
+
+            <Route path="*" element={<Page feedType={"Suggestion"} />} />
           </Routes>
         </BrowserRouter>
       )}

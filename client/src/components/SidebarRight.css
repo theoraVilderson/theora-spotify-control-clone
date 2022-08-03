@@ -1,0 +1,11 @@
+.sidebarRight {
+	background-color: var(--background-base);
+}
+.notification.active {
+	background-color: var(--text-bright-accent);
+	width: 6px;
+	height: 6px;
+	display: inline-block;
+	border-radius: 100%;
+	transform: translate(5px, 10px);
+}

@@ -159,4 +159,41 @@ router.get("/playlist/:playListId", (req, res) => {
 	return res.json({ status: true, data: { result: "USER_LOGGED_OUT" } });
 });
 
+router.get("/suggestions", async (req, res) => {
+	const suggestions = await req.spotifyApi.getSuggestions();
+	const error = globalErrorHandler("COULD_NOT_GET_SUGGESTIONS", suggestions);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: suggestions } });
+});
+router
+	.route("/artist/follow/:artistId")
+	.put(async (req, res) => {
+		const { artistId } = req.params;
+
+		const follow = await req.spotifyApi.follow(artistId, "artist");
+		const error = globalErrorHandler("COULD_NOT_FOLLOW", follow);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: follow } });
+	})
+	.delete(async (req, res) => {
+		const { artistId } = req.params;
+
+		const follow = await req.spotifyApi.unFollow(artistId, "artist");
+		const error = globalErrorHandler("COULD_NOT_UNFOLLOW", follow);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: follow } });
+	});
+
 module.exports = router;

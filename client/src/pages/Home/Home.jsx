@@ -9,7 +9,7 @@ import "./Home.css";
 import backgroundImg from "../../imgs/background.jpg";
 import useFetcher from "../../hooks/fetcher";
 
-function Home() {
+function Home({ feedType }) {
 	const [globalData, dispatch] = useGlobalContext();
 
 	const { userInfo } = globalData;
@@ -24,11 +24,10 @@ function Home() {
 			} catch (e) {
 				return null;
 			}
-			console.log(res.data.result);
-
+			// console.log(res?.data?.result);
 			dispatch({
 				type: actionTypes.SET_USERINFO,
-				payload: res.data.result,
+				payload: res?.data?.result,
 			});
 		})();
 	}, []);
@@ -38,7 +37,7 @@ function Home() {
 			<div className="page__container">
 				<div className="flex">
 					<Sidebar />
-					<Feed />
+					<Feed feedType={feedType} />
 				</div>
 			</div>
 			<div

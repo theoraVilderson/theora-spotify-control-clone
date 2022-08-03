@@ -70,6 +70,17 @@ class SpotifyApi {
 
 		return error;
 	}
+	async requestWrapper(func) {
+		let res;
+		try {
+			res = await func.bind(this)();
+		} catch (e) {
+			console.log(e?.response?.data?.error ?? e);
+			return this.handleGlobalErrors(e);
+		}
+
+		return res;
+	}
 	get loginUrl() {
 		const state = uuidv4();
 
@@ -91,74 +102,164 @@ class SpotifyApi {
 		return loginURl.toString();
 	}
 	async getMe() {
-		let res;
-		try {
-			res = await this.userReq.get("/me");
-		} catch (e) {
-			return this.handleGlobalErrors(e);
-		}
-		return res.data;
+		return await this.requestWrapper(async () => {
+			return (await this.userReq.get("/me")).data;
+		});
 	}
 	async getUserTokens(code) {
-		const data = {
-			code: code,
-			redirect_uri: process.env.REDIRECT_URI,
-			grant_type: "authorization_code",
-		};
-		let res;
-		try {
-			const url =
-				"https://accounts.spotify.com/api/token?" +
-				querystring.stringify(data);
-			console.log(url);
-			res = await this.apiReq.post(url);
-		} catch (e) {
-			return this.handleGlobalErrors(e);
-		}
-		const { access_token: accessToken, refresh_token: refreshToken } =
-			res.data;
-		return { accessToken, refreshToken };
+		return await this.requestWrapper(async () => {
+			const data = {
+				code: code,
+				redirect_uri: process.env.REDIRECT_URI,
+				grant_type: "authorization_code",
+			};
+			const query = querystring.stringify(data);
+			let url = "https://accounts.spotify.com/api/token?";
+			url = url + query;
+
+			const res = await this.apiReq.post(url);
+			const { access_token: accessToken, refresh_token: refreshToken } =
+				res.data;
+			return { accessToken, refreshToken };
+		});
 	}
 
-	async getFreshTokens(refreshToken) {
-		const data = {
-			refresh_token: refreshToken,
-			redirect_uri: process.env.REDIRECT_URI,
-			grant_type: "refresh_token",
-		};
-		let res;
-		try {
-			const url =
-				"https://accounts.spotify.com/api/token?" +
-				querystring.stringify(data);
-			res = await this.apiReq.post(url);
-		} catch (e) {
-			return this.handleGlobalErrors(e);
-		}
-		const { access_token: accessToken, refresh_token: newRefreshToken } =
-			res.data;
-		return {
-			accessToken,
-			refreshToken: newRefreshToken ? newRefreshToken : refreshToken,
-		};
+	async getFreshTokens(userRefreshToken) {
+		return this.requestWrapper(async () => {
+			const data = {
+				refresh_token: userRefreshToken,
+				redirect_uri: process.env.REDIRECT_URI,
+				grant_type: "refresh_token",
+			};
+			const query = querystring.stringify(data);
+			let url = "https://accounts.spotify.com/api/token?";
+			url = url + query;
+
+			const res = await this.apiReq.post(url);
+			const {
+				access_token: accessToken,
+				refresh_token: newRefreshToken,
+			} = res.data;
+			return {
+				accessToken,
+				refreshToken: newRefreshToken ?? userRefreshToken,
+			};
+		});
 	}
 	async getPlayLists(userId, offset = 0, limit = 20) {
-		const data = {
-			offset,
-			limit,
-		};
-		let res;
-		try {
-			const url = `https://api.spotify.com/v1/users/${userId}/playlists?${querystring.stringify(
-				data
-			)}`;
-			res = await this.userReq.get(url);
-		} catch (e) {
-			return this.handleGlobalErrors(e);
-		}
+		return this.requestWrapper(async () => {
+			const data = { offset, limit };
+			const query = querystring.stringify(data);
+			const url = `users/${userId}/playlists?${query}`;
+			const res = await this.userReq.get(url);
+			return res.data;
+		});
+	}
+	async getTopArtists() {
+		return this.requestWrapper(async () => {
+			const url = `me/top/artists`;
+			const res = await this.userReq.get(url);
+			return res.data;
+		});
+	}
+	async isTargetFollowed(artistId, type) {
+		return this.requestWrapper(async () => {
+			const url = `me/following/contains?type=${type}&ids=${artistId}`;
+			const res = await this.userReq.get(url);
 
-		const playListItems = res.data;
-		return playListItems;
+			return res.data;
+		});
+	}
+	async isFollowed(targetId) {
+		const isArtistFollowed = await this.isTargetFollowed(
+			targetId,
+			"artist"
+		);
+		const isUserFollowed = await this.isTargetFollowed(targetId, "artist");
+		if (isArtistFollowed.error) throw isArtistFollowed;
+		if (isUserFollowed.error) throw isUserFollowed;
+
+		return isArtistFollowed.map((e, key) => {
+			return e || isUserFollowed[key];
+		});
+	}
+	async getAllGerenresName() {
+		return this.requestWrapper(async () => {
+			const url = `recommendations/available-genre-seeds`;
+			genres = await this.userReq.get(url);
+			return genres.data;
+		});
+	}
+
+	async getArtist(artistId) {
+		return this.requestWrapper(async () => {
+			const url = `artists/${artistId}`;
+			const res = await this.userReq.get(url);
+			return res.data;
+		});
+	}
+	async follow(targetId, type) {
+		return this.requestWrapper(async () => {
+			const url = `me/following?type=${type}&ids=${targetId}`;
+			const res = await this.userReq.put(url, {
+				validateStatus: function (status) {
+					return status >= 200 && status <= 204; // default
+				},
+			});
+			return { follow: true };
+		});
+	}
+	async unFollow(targetId, type) {
+		return this.requestWrapper(async () => {
+			const url = `me/following?type=${type}&ids=${targetId}`;
+			const res = await this.userReq.delete(url, {
+				validateStatus: function (status) {
+					return status >= 200 && status <= 204; // default
+				},
+			});
+			return { unfollow: true };
+		});
+	}
+	async getSuggestions() {
+		return this.requestWrapper(async () => {
+			const topArtists = await this.getTopArtists();
+			if (topArtists.error) throw topArtists;
+
+			let { items } = topArtists;
+			items = items.filter((e) => e.type === "artist");
+			// if(items.length)
+			let url = `recommendations?`;
+			if (!items.length) {
+				url += "seed_genres=classical";
+			} else {
+				const targetArtist = items.reduce(
+					(e, n) => {
+						return e.popularity <= n.popularity ? n : e;
+					},
+					{ popularity: 0 }
+				);
+				url += `seed_artists=${targetArtist.id}`;
+			}
+
+			const suggestionsTracks = await this.userReq.get(url);
+
+			const targetArtist = await this.getArtist(
+				suggestionsTracks.data.seeds[0].id
+			);
+			if (targetArtist.error) throw targetArtist;
+
+			const isFollowed = await this.isFollowed(
+				suggestionsTracks.data.seeds[0].id
+			);
+			if (isFollowed.error) throw isFollowed;
+
+			const suggestions = {
+				...suggestionsTracks.data,
+				targetArtist: { ...targetArtist, isFollowed: isFollowed[0] },
+			};
+
+			return suggestions;
+		});
 	}
 }
 module.exports = SpotifyApi;
