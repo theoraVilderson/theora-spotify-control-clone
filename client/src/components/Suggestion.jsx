@@ -7,6 +7,7 @@ import { BsThreeDots } from "@react-icons/all-files/bs/BsThreeDots";
 import { RiUserFollowLine } from "@react-icons/all-files/ri/RiUserFollowLine";
 import { GoCheck } from "@react-icons/all-files/go/GoCheck";
 import { RingLoader } from "./Loading";
+import SongItem from "./SongItem";
 
 function Suggestion({ feedType }) {
 	const [globalData, dispatch] = useGlobalContext();
@@ -57,7 +58,7 @@ function Suggestion({ feedType }) {
 			})
 			.catch((e) => {
 				console.log(e);
-				alert("sorry couldn't get Seggestions");
+				alert(`sorry couldn't ${isFollowed ? "unFollow" : "follow"}`);
 			})
 			.finally(() => {
 				setIsProcessFollow(false);
@@ -70,8 +71,8 @@ function Suggestion({ feedType }) {
 				style={
 					backgroundImg && {
 						backgroundImage: `url(${backgroundImg})`,
-						backgroundAttachment: "scroll",
-						backgroundPosition: "50% 15%",
+						backgroundAttachment: "fixed",
+						backgroundPosition: "50% 50%",
 						backgroundSize: "cover",
 						contain: "strict",
 						contentVisibility: "auto",
@@ -144,6 +145,17 @@ function Suggestion({ feedType }) {
 						</div>
 					</div>
 				</div>
+			</div>
+			<div className="suggestions__songs flex flex-col">
+				{suggestions?.tracks?.map?.((e, k) => {
+					return (
+						<SongItem
+							key={e.id}
+							numberId={k + 1}
+							songInfo={JSON.stringify(e)}
+						/>
+					);
+				})}
 			</div>
 		</div>
 	);

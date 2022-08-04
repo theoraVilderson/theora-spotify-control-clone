@@ -126,6 +126,18 @@ router.get("/logout", (req, res) => {
 	return res.json({ status: true, data: { result: "USER_LOGGED_OUT" } });
 });
 
+router.get("/suggestions", async (req, res) => {
+	const suggestions = await req.spotifyApi.getSuggestions();
+	const error = globalErrorHandler("COULD_NOT_GET_SUGGESTIONS", suggestions);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: suggestions } });
+});
+
+// PlayList Route
 router.get("/playlists", async (req, res) => {
 	let { userId, offset = 0, limit = 20 } = req.query;
 
@@ -159,16 +171,7 @@ router.get("/playlist/:playListId", (req, res) => {
 	return res.json({ status: true, data: { result: "USER_LOGGED_OUT" } });
 });
 
-router.get("/suggestions", async (req, res) => {
-	const suggestions = await req.spotifyApi.getSuggestions();
-	const error = globalErrorHandler("COULD_NOT_GET_SUGGESTIONS", suggestions);
-
-	if (error) {
-		return res.json(error);
-	}
-
-	return res.json({ status: true, data: { result: suggestions } });
-});
+// Artist Route
 router
 	.route("/artist/follow/:artistId")
 	.put(async (req, res) => {
@@ -186,14 +189,94 @@ router
 	.delete(async (req, res) => {
 		const { artistId } = req.params;
 
-		const follow = await req.spotifyApi.unFollow(artistId, "artist");
-		const error = globalErrorHandler("COULD_NOT_UNFOLLOW", follow);
+		const unFollow = await req.spotifyApi.unFollow(artistId, "artist");
+		const error = globalErrorHandler("COULD_NOT_UNFOLLOW", unFollow);
 
 		if (error) {
 			return res.json(error);
 		}
 
-		return res.json({ status: true, data: { result: follow } });
+		return res.json({ status: true, data: { result: unFollow } });
+	});
+// Album Route
+
+router
+	.route("/album/like/:albumId")
+	.get(async (req, res) => {
+		const { albumId } = req.params;
+
+		const isLiked = await req.spotifyApi.isLikedTarget(albumId, "album");
+		const error = globalErrorHandler("COULD_NOT_CHECK_LIKE", isLiked);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: isLiked } });
+	})
+	.put(async (req, res) => {
+		const { albumId } = req.params;
+
+		const like = await req.spotifyApi.likeTarget(albumId, "album");
+		const error = globalErrorHandler("COULD_NOT_LIKE", like);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: like } });
+	})
+	.delete(async (req, res) => {
+		const { albumId } = req.params;
+
+		const unLike = await req.spotifyApi.unLikeTarget(albumId, "album");
+		const error = globalErrorHandler("COULD_NOT_UNLIKE", unLike);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: unLike } });
+	});
+
+// Track Route
+router
+	.route("/track/like/:trackId")
+	.get(async (req, res) => {
+		const { trackId } = req.params;
+
+		const isLiked = await req.spotifyApi.isLikedTarget(trackId, "track");
+		const error = globalErrorHandler("COULD_NOT_CHECK_LIKE", isLiked);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: isLiked } });
+	})
+	.put(async (req, res) => {
+		const { trackId } = req.params;
+
+		const like = await req.spotifyApi.likeTarget(trackId, "track");
+		const error = globalErrorHandler("COULD_NOT_LIKE", like);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: like } });
+	})
+	.delete(async (req, res) => {
+		const { trackId } = req.params;
+
+		const unLike = await req.spotifyApi.unLikeTarget(trackId, "track");
+		const error = globalErrorHandler("COULD_NOT_UNLIKE", unLike);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: unLike } });
 	});
 
 module.exports = router;

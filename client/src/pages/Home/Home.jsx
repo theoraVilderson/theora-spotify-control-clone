@@ -35,7 +35,7 @@ function Home({ feedType }) {
 	return (
 		<div className="home page relative">
 			<div className="page__container">
-				<div className="flex">
+				<div className="flex items-start">
 					<Sidebar />
 					<Feed feedType={feedType} />
 				</div>

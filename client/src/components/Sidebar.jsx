@@ -73,7 +73,7 @@ function Sidebar() {
 		dispatch({ type: actionTypes.SET_ACTIVE_MENU, payload: activeMenuId });
 	}, [activeMenuId]);
 	return (
-		<aside className="sidebar flex-col min-w-[130px] w-2/5 hidden md:flex  md:min-w-[280px] max-w-[350px] md:w-1/5 min-h-screen">
+		<aside className="sidebar sticky top-0 flex-col min-w-[130px] w-2/5 hidden md:flex  md:min-w-[280px] max-w-[350px] md:w-1/5 min-h-screen">
 			{/*head */}
 			<div className="sidebar__head flex items-center justify-between gap-4 sidebarSpace">
 				<Link to="/">

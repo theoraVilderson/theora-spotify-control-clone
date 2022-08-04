@@ -21,18 +21,22 @@ function SidebarRight() {
 	const fetcher = useFetcher();
 	const { userInfo } = globalData;
 
+	const isFree =
+		["free", "open"].includes(userInfo?.product) ||
+		userInfo?.product == null;
+
 	const userImage = userInfo?.images?.[0]?.href;
 
 	return (
-		<aside className="sidebarRight justify-between py-5 items-center flex-col min-w-[50px] w-2/5 hidden md:flex  max-w-[100px] md:w-2/12 min-h-[500px] h-screen">
+		<aside className="sidebarRight sticky top-0 justify-between py-5 items-center flex-col min-w-[50px] w-2/5 hidden md:flex  max-w-[100px] md:w-2/12 min-h-[500px] h-screen">
 			<div className="flex flex-col justify-center items-center">
 				<SidebarRightItem className="flex flex-col justify-center items-center">
-					<FaCrown />
-					<span className="text-xs">Go Pro</span>
+					<FaCrown className={`${!isFree ? "selectedColor" : ""}`} />
+					{isFree ? <span className="text-xs">Go Pro</span> : null}
 				</SidebarRightItem>
 
 				<SidebarRightItem>
-					<span className="notification active"></span>
+					<span className="notification active animate-ping"></span>
 					<FaBell />
 				</SidebarRightItem>
 				<SidebarRightItem>

@@ -183,21 +183,6 @@ class SpotifyApi {
 			return e || isUserFollowed[key];
 		});
 	}
-	async getAllGerenresName() {
-		return this.requestWrapper(async () => {
-			const url = `recommendations/available-genre-seeds`;
-			genres = await this.userReq.get(url);
-			return genres.data;
-		});
-	}
-
-	async getArtist(artistId) {
-		return this.requestWrapper(async () => {
-			const url = `artists/${artistId}`;
-			const res = await this.userReq.get(url);
-			return res.data;
-		});
-	}
 	async follow(targetId, type) {
 		return this.requestWrapper(async () => {
 			const url = `me/following?type=${type}&ids=${targetId}`;
@@ -220,6 +205,46 @@ class SpotifyApi {
 			return { unfollow: true };
 		});
 	}
+	async getAllGerenresName() {
+		return this.requestWrapper(async () => {
+			const url = `recommendations/available-genre-seeds`;
+			genres = await this.userReq.get(url);
+			return genres.data;
+		});
+	}
+
+	async getArtist(artistId) {
+		return this.requestWrapper(async () => {
+			const url = `artists/${artistId}`;
+			const res = await this.userReq.get(url);
+			return res.data;
+		});
+	}
+
+	async isLikedTarget(targetId, type) {
+		return this.requestWrapper(async () => {
+			const url = `me/${type}s/contains?ids=${targetId}`;
+			const res = await this.userReq.get(url);
+			return res.data;
+		});
+	}
+
+	async likeTarget(targetId, type) {
+		return this.requestWrapper(async () => {
+			const url = `me/${type}s?ids=${targetId}`;
+			const res = await this.userReq.put(url);
+			return { like: true };
+		});
+	}
+
+	async unLikeTarget(targetId, type) {
+		return this.requestWrapper(async () => {
+			const url = `me/${type}s?ids=${targetId}`;
+			const res = await this.userReq.delete(url);
+			return { unLike: true };
+		});
+	}
+
 	async getSuggestions() {
 		return this.requestWrapper(async () => {
 			const topArtists = await this.getTopArtists();
@@ -258,6 +283,12 @@ class SpotifyApi {
 				targetArtist: { ...targetArtist, isFollowed: isFollowed[0] },
 			};
 
+			const allTracksId = suggestions.tracks.map((e) => e.id);
+			const tracksLike = await this.isLikedTarget(allTracksId, "track");
+			if (tracksLike.error) throw tracksLike;
+			suggestions.tracks = suggestions.tracks.map((e, k) => {
+				return { ...e, isLiked: tracksLike[k] };
+			});
 			return suggestions;
 		});
 	}

@@ -15,15 +15,15 @@
 	--background-elevated-press: #000;
 	--text-bright-accent: #1ed760;
 }
-body {
+body,
+input[type="text"]::placeholder {
 	color: var(--text-subdued);
 }
-.activeColor {
-	color: var(--text-base);
-}
+.activeColor,
 .activeColorHover:hover {
 	color: var(--text-base);
 }
-input[type="text"]::placeholder {
-	color: var(--text-subdued);
+.selectedColor,
+.selectedColorHover:hover {
+	color: var(--text-bright-accent);
 }
