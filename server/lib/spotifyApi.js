@@ -283,13 +283,109 @@ class SpotifyApi {
 				targetArtist: { ...targetArtist, isFollowed: isFollowed[0] },
 			};
 
+			let allTracks = suggestions.tracks.reduce((re, cu) => {
+				if (!re[cu.id]) re[cu.id] = cu;
+				return re;
+			}, {});
+
+			const currentlyPlaying = await this.getCurrentlyPlaying();
+
+			const isCurrentlyPlaying = !!currentlyPlaying?.item;
+
+			if (currentlyPlaying?.error) return currentlyPlaying;
+
+			if (isCurrentlyPlaying) {
+				if (allTracks[currentlyPlaying.item.id]) {
+					delete allTracks[currentlyPlaying.item.id];
+				}
+
+				suggestions.tracks.unshift(currentlyPlaying.item);
+				suggestions.tracks = suggestions.tracks.slice(0, 20);
+				allTracks = suggestions.tracks.reduce((re, cu) => {
+					if (!re[cu.id]) re[cu.id] = cu;
+					return re;
+				}, {});
+			}
+
+			const recentlyPlayed = await this.getRecentlyPlayedTracks();
+
+			if (recentlyPlayed.error) throw recentlyPlayed;
+
+			const recentlySongs = Object.values(
+				recentlyPlayed.items.reduce((re, cu) => {
+					if (!re[cu.track.id] && !allTracks[cu.track.id])
+						re[cu.track.id] = cu.track;
+					return re;
+				}, {})
+			).slice(0, 5);
+
+			suggestions.tracks.splice(+isCurrentlyPlaying, 0, ...recentlySongs);
+			suggestions.tracks = suggestions.tracks.slice(0, 20);
+
 			const allTracksId = suggestions.tracks.map((e) => e.id);
 			const tracksLike = await this.isLikedTarget(allTracksId, "track");
 			if (tracksLike.error) throw tracksLike;
+
 			suggestions.tracks = suggestions.tracks.map((e, k) => {
 				return { ...e, isLiked: tracksLike[k] };
 			});
 			return suggestions;
+		});
+	}
+
+	async getCurrentlyPlaying(type = "track") {
+		return this.requestWrapper(async () => {
+			const url = `me/player/currently-playing?additional_types=${type}`;
+			const res = await this.userReq.get(url);
+			return res.data;
+		});
+	}
+	async getRecentlyPlayedTracks() {
+		return this.requestWrapper(async () => {
+			const url = `me/player/recently-played`;
+			const res = await this.userReq.get(url);
+
+			return res.data;
+		});
+	}
+	async getPlayerState(type = "track") {
+		return this.requestWrapper(async () => {
+			const url = `me/player?additional_types=${type}`;
+			const res = await this.userReq.get(url);
+			return res.data;
+		});
+	}
+	async setPlayerVolume(volume_percent = 50) {
+		return this.requestWrapper(async () => {
+			const url = `me/player/volume?volume_percent=${volume_percent}`;
+			const res = await this.userReq.put(url, {
+				validateStatus: function (status) {
+					return status >= 200 && status <= 204; // default
+				},
+			});
+			return { volume_percent: true };
+		});
+	}
+	async playerSeekTo(position_ms = 50) {
+		return this.requestWrapper(async () => {
+			const url = `me/player/seek?position_ms=${position_ms}`;
+			const res = await this.userReq.put(url, {
+				validateStatus: function (status) {
+					return status >= 200 && status <= 204; // default
+				},
+			});
+			return { position_ms: true };
+		});
+	}
+	async playerPlayPause(type = "play") {
+		return this.requestWrapper(async () => {
+			const url = `me/player/${type}`;
+			const res = await this.userReq.put(url, {
+				validateStatus: function (status) {
+					return status >= 200 && status <= 204; // default
+				},
+			});
+			return { [type]: true };
 		});
 	}
 }

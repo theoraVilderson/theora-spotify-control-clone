@@ -279,4 +279,74 @@ router
 		return res.json({ status: true, data: { result: unLike } });
 	});
 
+// Player Route
+
+router.get("/player/currently-playing", async (req, res) => {
+	const { additional_types = "track" } = req.query;
+	const currentlyPlaying = await req.spotifyApi.getCurrentlyPlaying(
+		additional_types
+	);
+	const error = globalErrorHandler(
+		"COULD_NOT_GET_CURRENTLY_PLAYING",
+		currentlyPlaying
+	);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: currentlyPlaying } });
+});
+router.get("/player", async (req, res) => {
+	const playerState = await req.spotifyApi.getPlayerState();
+	const error = globalErrorHandler("COULD_NOT_GET_PLAYER_STATE", playerState);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: playerState } });
+});
+router.put("/player/volume", async (req, res) => {
+	const { volume_percent = "50" } = req.query;
+	const changeVolume = await req.spotifyApi.setPlayerVolume(volume_percent);
+	const error = globalErrorHandler("COULD_NOT_CHANGE_VOLUME", changeVolume);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: changeVolume } });
+});
+router.put("/player/seek", async (req, res) => {
+	const { position_ms } = req.query;
+	const playerSeek = await req.spotifyApi.playerSeekTo(position_ms);
+	const error = globalErrorHandler("COULD_NOT_SEEK", playerSeek);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: playerSeek } });
+});
+router.put("/player/play", async (req, res) => {
+	const playerPlay = await req.spotifyApi.playerPlayPause("play");
+	const error = globalErrorHandler("COULD_NOT_PLAY", playerPlay);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: playerPlay } });
+});
+router.put("/player/pause", async (req, res) => {
+	const playerPause = await req.spotifyApi.playerPlayPause("pause");
+	const error = globalErrorHandler("COULD_NOT_PAUSE", playerPause);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: playerPause } });
+});
 module.exports = router;

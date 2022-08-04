@@ -3,6 +3,7 @@ import { actionTypes } from "../reducer/globalReducer";
 import useFetcher from "../hooks/fetcher";
 import { FaRegHeart } from "@react-icons/all-files/fa/FaRegHeart";
 import { IoMdHeart } from "@react-icons/all-files/io/IoMdHeart";
+import { MdExplicit } from "@react-icons/all-files/md/MdExplicit";
 
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
@@ -15,10 +16,11 @@ function SongItem({ songInfo, numberId }) {
 		id,
 		duration_ms,
 		isLiked,
+		explicit,
 	} = JSON.parse(songInfo);
 
 	const [globalData, dispatch] = useGlobalContext();
-	const { userInfo } = globalData;
+	const { userInfo, activeMusic } = globalData;
 	const fetcher = useFetcher([globalData, dispatch]);
 
 	const backgroundImg = useMemo(() => {
@@ -67,30 +69,42 @@ function SongItem({ songInfo, numberId }) {
 				setIsLiking(false);
 			});
 	};
+	const isActiveSong = id === activeMusic;
 
 	return (
-		<div className="song flex justify-between cursor-pointer group activeColorHover">
-			<div className="flex gap-2 p-3 ">
-				<div className="w-10 flex justify-center items-center ">
+		<div
+			className={`song  flex flex-col sm:flex-row justify-between cursor-pointer group ${
+				isActiveSong ? "selectedColor" : "activeColorHover"
+			} `}
+		>
+			<div className="flex gap-2 p-3 flex-col sm:flex-row items-center flex-wrap sm:flex-nowrap sm:items-center">
+				<div
+					className={`w-full sm:w-10 flex justify-center items-center text-2xl sm:text-sm shrink-0`}
+				>
 					#{numberId}
 				</div>
-				<div className="w-12 h-12 rounded overflow-hidden">
+				<div className="w-[70vw] sm:w-12 sm:h-12 rounded overflow-hidden shrink-0">
 					{backgroundImg && (
 						<img
-							className="w-12 h-12 group-hover:scale-150 duration-100"
+							className="w-full sm:w-12 sm:h-12 group-hover:scale-150 duration-100"
 							src={backgroundImg}
 							alt="SongImg"
 						/>
 					)}
 				</div>
 				<div className="text-xs flex flex-col justify-around">
-					<Link
-						to={`/track/${id}`}
-						className="border-b hover:border-current border-solid border-transparent font-bold activeColor"
-					>
-						{name}
-					</Link>
-					<div className="flex ">
+					<div>
+						<Link
+							to={`/track/${id}`}
+							className="border-b break-all hover:border-current border-solid border-transparent font-bold activeColor"
+						>
+							{name}
+						</Link>
+					</div>
+					<div className="flex flex-wrap items-center">
+						{explicit ? (
+							<MdExplicit className="w-4 h-4 m-2 ml-0" />
+						) : null}
 						{artists.map((e, k) => {
 							return (
 								<>
@@ -98,7 +112,7 @@ function SongItem({ songInfo, numberId }) {
 
 									<Link
 										to={`/artist/${e.id}`}
-										className={`border-b hover:border-current border-solid border-transparent ${
+										className={`border-b break-all hover:border-current border-solid border-transparent ${
 											(k && "mx-1") || "mr-1"
 										} `}
 									>
@@ -110,13 +124,13 @@ function SongItem({ songInfo, numberId }) {
 					</div>
 				</div>
 			</div>
-			<div className="flex items-center gap-4 p-5">
+			<div className="flex w-full sm:w-auto justify-between sm:justify-scratch items-center gap-4 p-5">
 				<div className="like">
 					<span
 						onClick={onHitLike}
 						className={`${
 							!like && !isLiking
-								? "hidden group-hover:inline-block"
+								? "inline-block sm:hidden group-hover:inline-block"
 								: "inline-block"
 						}  ${isLiking ? "animate-spin" : ""}`}
 					>

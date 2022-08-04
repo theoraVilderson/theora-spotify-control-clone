@@ -18,7 +18,7 @@ import { FaDesktop } from "@react-icons/all-files/fa/FaDesktop";
 import { Link, useLocation } from "react-router-dom";
 import "./Sidebar.css";
 import MenuItem from "./MenuItem";
-import VolumeRange from "./VolumeRange";
+import SliderRange from "./SliderRange";
 import UserPlayLists from "./UserPlayLists";
 
 import { useEffect, useState, useMemo } from "react";
@@ -27,9 +27,12 @@ import defaultPlayListImg from "../imgs/defaultPlayList.png";
 
 function Sidebar() {
 	const [globalData, dispatch] = useGlobalContext();
-	const { userInfo, activeMenu } = globalData;
+	const { userInfo, activeMenu, playerState } = globalData;
 	const fetcher = useFetcher([globalData, dispatch]);
 	const { pathname } = useLocation();
+	const isFree =
+		["free", "open"].includes(userInfo?.product) ||
+		userInfo?.product == null;
 	const menuItems = [
 		{
 			id: 1,
@@ -72,6 +75,44 @@ function Sidebar() {
 	useEffect(() => {
 		dispatch({ type: actionTypes.SET_ACTIVE_MENU, payload: activeMenuId });
 	}, [activeMenuId]);
+	const [updateOnDefaultChange, setUpdateOnDefaultChange] = useState(true);
+	const [updateOnDefaultIsDisabled, setUpdateOnDefaultIsDisabled] =
+		useState(false);
+	const [range, setRange] = useState(
+		~~((playerState?.progress_ms ?? 1000) / 1000)
+	);
+	const seekTo = function () {
+		fetcher(`/api/player/volume?volume_percent=${~~range}`, {
+			method: "PUT",
+		})
+			.then((e) => {
+				if (e.data.error) {
+					return;
+				}
+				playerState.device.volume_percent = range;
+
+				dispatch({
+					type: actionTypes.SET_PLAYER_STATE,
+					payload: playerState,
+				});
+			})
+			.catch((e) => {
+				console.log(e);
+				alert(`sorry couldn't update volume `);
+			})
+			.finally(() => {
+				setUpdateOnDefaultChange(true);
+			});
+	};
+	useEffect(
+		(e) => {
+			if (!updateOnDefaultIsDisabled) return;
+			setUpdateOnDefaultIsDisabled(false);
+			seekTo();
+		},
+		[updateOnDefaultIsDisabled]
+	);
+
 	return (
 		<aside className="sidebar sticky top-0 flex-col min-w-[130px] w-2/5 hidden md:flex  md:min-w-[280px] max-w-[350px] md:w-1/5 min-h-screen">
 			{/*head */}
@@ -142,7 +183,26 @@ function Sidebar() {
 				<div className="flex justify-around items-center">
 					<BsFillVolumeUpFill />
 
-					<VolumeRange />
+					<SliderRange
+						defaultValues={[
+							playerState?.device?.volume_percent ?? 50,
+						]}
+						onSliderChange={([val]) => {
+							setRange(val);
+						}}
+						step={1}
+						min={0}
+						max={100}
+						onSliderDone={() => {
+							// if (isFree) return;
+							setUpdateOnDefaultIsDisabled(true);
+						}}
+						onSliderStart={() => {
+							// if (isFree) return;
+							setUpdateOnDefaultChange(false);
+						}}
+						updateOnDefaultChange={updateOnDefaultChange}
+					/>
 
 					<BsMusicNoteList className="cursor-pointer" />
 

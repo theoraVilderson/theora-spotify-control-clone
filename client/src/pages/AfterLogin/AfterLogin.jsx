@@ -20,7 +20,6 @@ function AfterLogin() {
 
 	useEffect(() => {
 		(async () => {
-			console.log({ loginChallange, userLoginChallange });
 			if (loginChallange !== userLoginChallange) {
 				alert("unmatched login! please try again");
 				urlController("/");

@@ -65,7 +65,7 @@ function Suggestion({ feedType }) {
 			});
 	};
 	return (
-		<div className="suggestions">
+		<div className="suggestions min-h-screen">
 			<div
 				className="suggestions__top h-[40vh] min-h-[340px] bg-no-repeat "
 				style={

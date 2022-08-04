@@ -23,6 +23,10 @@ input[type="text"]::placeholder {
 .activeColorHover:hover {
 	color: var(--text-base);
 }
+.activeBgColor,
+.activeBgColorHover:hover {
+	background-color: var(--background-base);
+}
 .selectedColor,
 .selectedColorHover:hover {
 	color: var(--text-bright-accent);

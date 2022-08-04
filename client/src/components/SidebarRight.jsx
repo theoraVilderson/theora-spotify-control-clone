@@ -25,7 +25,7 @@ function SidebarRight() {
 		["free", "open"].includes(userInfo?.product) ||
 		userInfo?.product == null;
 
-	const userImage = userInfo?.images?.[0]?.href;
+	const userImage = userInfo?.images?.[0]?.url;
 
 	return (
 		<aside className="sidebarRight sticky top-0 justify-between py-5 items-center flex-col min-w-[50px] w-2/5 hidden md:flex  max-w-[100px] md:w-2/12 min-h-[500px] h-screen">

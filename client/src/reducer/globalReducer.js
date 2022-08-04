@@ -10,6 +10,7 @@ export const initialValue = {
 	activePlayList: null,
 	activeMusic: null,
 	activeMenu: null,
+	playerState: {},
 };
 
 export const actionTypes = {
@@ -23,6 +24,7 @@ export const actionTypes = {
 	SET_ACTIVE_PLAYIST: "SET_ACTIVE_PLAYIST",
 	SET_ACTIVE_MUSIC: "SET_ACTIVE_MUSIC",
 	SET_ACTIVE_MENU: "SET_ACTIVE_MENU",
+	SET_PLAYER_STATE: "SET_PLAYER_STATE",
 };
 
 const reducer = (state, { type, payload } = {}) => {
@@ -36,6 +38,7 @@ const reducer = (state, { type, payload } = {}) => {
 		SET_ACTIVE_PLAYIST,
 		SET_ACTIVE_MUSIC,
 		SET_ACTIVE_MENU,
+		SET_PLAYER_STATE,
 	} = actionTypes;
 
 	switch (type) {
@@ -55,6 +58,9 @@ const reducer = (state, { type, payload } = {}) => {
 			return { ...state, activeMusic: payload };
 		case SET_ACTIVE_MENU:
 			return { ...state, activeMenu: payload };
+		case SET_PLAYER_STATE:
+			return { ...state, playerState: payload };
+
 		case LOG_OUT_USER:
 			cookieHandler.delete("accessToken");
 			cookieHandler.delete("refreshToken");
