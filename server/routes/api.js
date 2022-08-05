@@ -158,18 +158,82 @@ router.get("/playlists", async (req, res) => {
 	return res.json({ status: true, data: { result: userInfo } });
 });
 
-router.get("/playlist/:playListId", (req, res) => {
-	const { spotify } = req.query;
+router.get("/playlist/:playlistId", async (req, res) => {
+	const { playlistId } = req.params;
 
-	res.cookie("accessToken", "", { maxAage: 0 });
-	res.cookie("refreshToken", "", {
-		maxAage: 0,
-	});
-	if (!!spotify) {
-		return res.redirect("https://accounts.spotify.com/en/logout");
+	const playList = await req.spotifyApi.getPlayList(playlistId);
+	const error = globalErrorHandler("COULD_NOT_GET_PLAYLIST", playList);
+
+	if (error) {
+		return res.json(error);
 	}
-	return res.json({ status: true, data: { result: "USER_LOGGED_OUT" } });
+
+	return res.json({ status: true, data: { result: playList } });
 });
+router.get("/playlistItems/:playlistId", async (req, res) => {
+	const { playlistId } = req.params;
+	const { offset = 0, limit = 20 } = req.query;
+	const playlistItems = await req.spotifyApi.getPlayListItems(
+		playlistId,
+		offset,
+		limit
+	);
+	const error = globalErrorHandler(
+		"COULD_NOT_GET_PLAYLIST_ITEMS",
+		playlistItems
+	);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: playlistItems } });
+});
+router.get("/playlistFullInfo/:playlistId", async (req, res) => {
+	const { playlistId } = req.params;
+	const { offset = 0, limit = 20 } = req.query;
+	const playlistFullInfo = await req.spotifyApi.getFullyPlayList(
+		playlistId,
+		offset,
+		limit
+	);
+	const error = globalErrorHandler(
+		"COULD_NOT_GET_PLAYLIST_FULL_INFORMATION",
+		playlistFullInfo
+	);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: playlistFullInfo } });
+});
+router
+	.route("/playlist/follow/:playlistId")
+	.put(async (req, res) => {
+		const { playlistId } = req.params;
+
+		const follow = await req.spotifyApi.follow(playlistId, "playlist");
+		const error = globalErrorHandler("COULD_NOT_SAVE_PLAYLIST", follow);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: follow } });
+	})
+	.delete(async (req, res) => {
+		const { playlistId } = req.params;
+
+		const unFollow = await req.spotifyApi.unFollow(playlistId, "playlist");
+		const error = globalErrorHandler("COULD_NOT_UNSAVE_PLAYLIST", unFollow);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: unFollow } });
+	});
 
 // Artist Route
 router
@@ -286,6 +350,7 @@ router.get("/player/currently-playing", async (req, res) => {
 	const currentlyPlaying = await req.spotifyApi.getCurrentlyPlaying(
 		additional_types
 	);
+	console.log({ currentlyPlaying });
 	const error = globalErrorHandler(
 		"COULD_NOT_GET_CURRENTLY_PLAYING",
 		currentlyPlaying
@@ -297,16 +362,7 @@ router.get("/player/currently-playing", async (req, res) => {
 
 	return res.json({ status: true, data: { result: currentlyPlaying } });
 });
-router.get("/player", async (req, res) => {
-	const playerState = await req.spotifyApi.getPlayerState();
-	const error = globalErrorHandler("COULD_NOT_GET_PLAYER_STATE", playerState);
 
-	if (error) {
-		return res.json(error);
-	}
-
-	return res.json({ status: true, data: { result: playerState } });
-});
 router.put("/player/volume", async (req, res) => {
 	const { volume_percent = "50" } = req.query;
 	const changeVolume = await req.spotifyApi.setPlayerVolume(volume_percent);
@@ -330,7 +386,11 @@ router.put("/player/seek", async (req, res) => {
 	return res.json({ status: true, data: { result: playerSeek } });
 });
 router.put("/player/play", async (req, res) => {
-	const playerPlay = await req.spotifyApi.playerPlayPause("play");
+	let { uris = "" } = req.query;
+
+	uris = uris.split(",");
+
+	const playerPlay = await req.spotifyApi.playerPlayPause("play", uris);
 	const error = globalErrorHandler("COULD_NOT_PLAY", playerPlay);
 
 	if (error) {
@@ -348,5 +408,37 @@ router.put("/player/pause", async (req, res) => {
 	}
 
 	return res.json({ status: true, data: { result: playerPause } });
+});
+router.put("/player/repeat", async (req, res) => {
+	const { state } = req.query;
+	const playerRepeat = await req.spotifyApi.playerRepeat(state);
+	const error = globalErrorHandler("COULD_NOT_SET_REPEAT", playerRepeat);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: playerRepeat } });
+});
+router.put("/player/shuffle", async (req, res) => {
+	const { state } = req.query;
+	const playerShuffle = await req.spotifyApi.playerShuffle(state);
+	const error = globalErrorHandler("COULD_NOT_SET_SHUFFLE", playerShuffle);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: playerShuffle } });
+});
+router.get("/player", async (req, res) => {
+	const playerState = await req.spotifyApi.getPlayerState();
+	const error = globalErrorHandler("COULD_NOT_GET_PLAYER_STATE", playerState);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: playerState } });
 });
 module.exports = router;

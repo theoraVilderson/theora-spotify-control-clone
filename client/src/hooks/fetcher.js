@@ -47,7 +47,7 @@ export default function useFetcher([, dispatch] = []) {
 					// null means go to login!
 					return null;
 				} else if (e.data.error) {
-					alert("Error: " + e.data.error);
+					console.error("Error: " + e.data.error);
 				}
 
 				return e;

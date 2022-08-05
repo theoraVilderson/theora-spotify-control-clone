@@ -66,7 +66,7 @@ function App() {
           <Routes>
             <Route path={"/callback"} element={<AfterLogin />} />
             <Route
-              path="/playlist/:playlist"
+              path="/playlist/:playlistId"
               element={<Page feedType={"Playlist"} />}
             />
             <Route
@@ -81,6 +81,7 @@ function App() {
               path="/artist/:artistId"
               element={<Page feedType={"Artist"} />}
             />
+            <Route path="/user/:userId" element={<Page feedType={"User"} />} />
 
             <Route path="*" element={<Page feedType={"Suggestion"} />} />
           </Routes>

@@ -17,10 +17,18 @@ import { MdRepeatOne } from "@react-icons/all-files/md/MdRepeatOne";
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 
-function Player() {
+// TODO make the timer for updating data faster
+function Player({ feedType }) {
 	const [globalData, dispatch] = useGlobalContext();
-	let { userInfo, tokens, activeMusic, playerState } = globalData;
+	let {
+		userInfo,
+		tokens,
+		activeMusic,
+		playerState,
+		playerQueue: allPlayerQueue,
+	} = globalData;
 	const fetcher = useFetcher([globalData, dispatch]);
+	const playerQueue = allPlayerQueue[feedType] ?? {};
 
 	const [updateOnDefaultChange, setUpdateOnDefaultChange] = useState(true);
 	const [updateOnDefaultIsDisabled, setUpdateOnDefaultIsDisabled] =
@@ -28,7 +36,7 @@ function Player() {
 	const isFree =
 		["free", "open"].includes(userInfo?.product) ||
 		userInfo?.product == null;
-	activeMusic = useMemo(() => activeMusic, [activeMusic]);
+	activeMusic = useMemo(() => activeMusic?.id, [activeMusic]);
 
 	const [range, setRange] = useState(
 		~~((playerState?.progress_ms ?? 1000) / 1000)
@@ -48,7 +56,7 @@ function Player() {
 				});
 				dispatch({
 					type: actionTypes.SET_ACTIVE_MUSIC,
-					payload: e.data.result.item.id,
+					payload: e.data.result.item,
 				});
 			})
 			.catch((e) => {
@@ -95,7 +103,7 @@ function Player() {
 		const action = (timer = setTimeout(function time() {
 			if (timer == null) return 1;
 
-			stateChecker();
+			// stateChecker();
 
 			return (timer = setTimeout(time, 5000));
 		}, 500));
@@ -125,6 +133,26 @@ function Player() {
 	}, [currentProgress]);
 
 	const onHitPlayPauseBtn = () => {
+		if (!activeMusicItem) {
+			const id = playerQueue[0].id ?? playerQueue[0]?.track?.id;
+
+			fetcher(`/api/player/play/?uris=${id}`, {
+				method: "PUT",
+			})
+				.then((e) => {
+					if (e.data.error) {
+						return;
+					}
+				})
+				.catch((e) => {
+					console.log(e);
+					alert(`sorry couldn't play`);
+				})
+				.finally(() => {});
+
+			return;
+		}
+
 		fetcher(`/api/player/${playerState.is_playing ? "pause" : "play"}`, {
 			method: "PUT",
 		})
@@ -140,14 +168,123 @@ function Player() {
 			})
 			.finally(() => {});
 	};
-	const onHitgoBack = () => {
+	const onHitGoBack = () => {
 		seekTo(Math.max(range - 5, 0) * 1000);
 	};
-	const onHitgoForward = () => {
+	const onHitGoForward = () => {
 		seekTo(Math.min(maxDuration, range + 5) * 1000);
 	};
 
-	return (
+	const calcNextIds = (forwardCount = 1) => {
+		if (!Object.keys(playerQueue).length || !playerQueue[activeMusic])
+			return activeMusic;
+
+		const orderedSongs = Object.values(playerQueue).sort(
+			(a, b) => a.orderId - b.orderId
+		);
+		const item = playerQueue[activeMusic];
+
+		let startItem = item.orderId - forwardCount;
+
+		startItem =
+			startItem < 0
+				? orderedSongs.slice(startItem)[0].orderId
+				: startItem % orderedSongs.length;
+
+		const firstHalf = orderedSongs.slice(startItem, orderedSongs.length);
+		const secondHalf = orderedSongs.slice(0, startItem + 1);
+		const lastRes = [...firstHalf, ...secondHalf]
+			.map((e) => e.id)
+			.join(",");
+
+		return lastRes;
+	};
+	const nextPlayIds = useMemo(() => calcNextIds(1), [playerQueue]);
+	const perviousPlayIds = useMemo(() => calcNextIds(-1), [playerQueue]);
+
+	const onHitGoForwardStep = () => {
+		if (!nextPlayIds) return;
+		fetcher(`/api/player/play?uris=${nextPlayIds}`, {
+			method: "PUT",
+		})
+			.then((e) => {
+				if (e.data.error) {
+					return;
+				}
+				if (!e?.data?.result) return;
+			})
+			.catch((e) => {
+				console.log(e);
+				// alert(`sorry couldn't get currently-playing`);
+			})
+			.finally(() => {});
+	};
+	const onHitGoBackStep = () => {
+		if (!perviousPlayIds) return;
+
+		fetcher(`/api/player/play?uris=${perviousPlayIds}`, {
+			method: "PUT",
+		})
+			.then((e) => {
+				if (e.data.error) {
+					return;
+				}
+				if (!e?.data?.result) return;
+			})
+			.catch((e) => {
+				console.log(e);
+				// alert(`sorry couldn't get currently-playing`);
+			})
+			.finally(() => {});
+	};
+
+	const onHitReapet = () => {
+		const states = ["off", "context", "track"];
+
+		const nextState =
+			states[
+				Math.max(
+					Math.min(0, states.indexOf(playerState.repeat_state) + 1),
+					3
+				)
+			];
+
+		fetcher(`/api/player/repeat?state=${nextState}`, {
+			method: "PUT",
+		})
+			.then((e) => {
+				if (e.data.error) {
+					return;
+				}
+				if (!e?.data?.result) return;
+			})
+			.catch((e) => {
+				console.log(e);
+				// alert(`sorry couldn't get currently-playing`);
+			})
+			.finally(() => {});
+	};
+
+	const onHitShuffle = () => {
+		const nextState = !playerState.shuffle_state;
+
+		fetcher(`/api/player/shuffle?state=${nextState ? "true" : "false"}`, {
+			method: "PUT",
+		})
+			.then((e) => {
+				if (e.data.error) {
+					return;
+				}
+				if (!e?.data?.result) return;
+			})
+			.catch((e) => {
+				console.log(e);
+				// alert(`sorry couldn't get currently-playing`);
+			})
+			.finally(() => {});
+	};
+
+	return !activeMusicItem ? null : (
 		<div className="flex flex-col player activeBgColor justify-start sticky  bottom-0 min-h-20">
 			<div className="player__head w-full">
 				<SliderRange
@@ -172,120 +309,117 @@ function Player() {
 				/>
 			</div>
 			<div className="flex-1 flex items-center justify-around p-1  flex-wrap gap-3">
-				{!activeMusicItem ? null : (
-					<>
-						<div className="flex items-center w-full sm:w-auto justify-around">
-							<div>
-								<img
-									className="w-12 h-12"
-									src={
-										activeMusicItem?.images?.[0]?.url ||
-										activeMusicItem?.album?.images?.[0]?.url
-									}
-									alt="songImg"
-								/>
-							</div>
-							<div className="ml-2">
-								{
-									<div className="text-xs flex flex-col justify-around">
-										<div>
-											<Link
-												to={`/track/${activeMusicItem.id}`}
-												className="border-b break-all hover:border-current border-solid border-transparent font-bold activeColor"
-											>
-												{activeMusicItem.name}
-											</Link>
-										</div>
-										<div className="flex flex-wrap items-center">
-											{activeMusicItem.explicit ? (
-												<MdExplicit className="w-4 h-4 m-2 ml-0" />
-											) : null}
-											{activeMusicItem.artists.map(
-												(e, k) => {
-													return (
-														<>
-															{(k && ",") || null}
+				<div className="flex items-center w-full sm:w-auto justify-around">
+					<div>
+						<img
+							className="w-12 h-12"
+							src={
+								activeMusicItem?.images?.[0]?.url ||
+								activeMusicItem?.album?.images?.[0]?.url
+							}
+							alt="songImg"
+						/>
+					</div>
+					<div className="ml-2">
+						{
+							<div className="text-xs flex flex-col justify-around">
+								<div>
+									<Link
+										to={`/track/${activeMusicItem.id}`}
+										className="border-b break-all hover:border-current border-solid border-transparent font-bold activeColor"
+									>
+										{activeMusicItem.name}
+									</Link>
+								</div>
+								<div className="flex flex-wrap items-center">
+									{activeMusicItem.explicit ? (
+										<MdExplicit className="w-4 h-4 m-2 ml-0" />
+									) : null}
+									{activeMusicItem.artists.map((e, k) => {
+										return (
+											<span key={k}>
+												{(k && ",") || null}
 
-															<Link
-																to={`/artist/${e.id}`}
-																className={`border-b break-all hover:border-current border-solid border-transparent ${
-																	(k &&
-																		"mx-1") ||
-																	"mr-1"
-																} `}
-															>
-																{e.name}
-															</Link>
-														</>
-													);
-												}
-											)}
-										</div>
-									</div>
-								}
+												<Link
+													to={`/artist/${e.id}`}
+													className={`border-b break-all hover:border-current border-solid border-transparent ${
+														(k && "mx-1") || "mr-1"
+													} `}
+												>
+													{e.name}
+												</Link>
+											</span>
+										);
+									})}
+								</div>
 							</div>
+						}
+					</div>
+				</div>
+
+				<div className="flex flex-col items-center gap-1">
+					<div className="flex gap-3 items-center">
+						<FaStepBackward
+							className="cursor-pointer"
+							onClick={onHitGoBackStep}
+						/>
+						<FaBackward
+							onClick={onHitGoBack}
+							className="cursor-pointer"
+						/>
+
+						<div
+							className={`cursor-pointer inline-flex rounded-full w-8 h-8 items-center justify-center ${
+								playerState.is_playing
+									? "player_playing"
+									: "player_pause"
+							}`}
+							style={{
+								backgroundColor: "var(--text-base)",
+								color: "var(--background-press)",
+							}}
+							onClick={onHitPlayPauseBtn}
+						>
+							{playerState.is_playing ? <FaPause /> : <FaPlay />}
 						</div>
 
-						<div className="flex flex-col items-center gap-1">
-							<div className="flex gap-3 items-center">
-								<FaStepBackward className="cursor-pointer" />
-								<FaBackward
-									onClick={onHitgoBack}
-									className="cursor-pointer"
-								/>
-
-								<div
-									className="cursor-pointer inline-flex rounded-full w-8 h-8 items-center justify-center"
-									style={{
-										backgroundColor: "var(--text-base)",
-										color: "var(--background-press)",
-									}}
-									onClick={onHitPlayPauseBtn}
-								>
-									{playerState.is_playing ? (
-										<FaPause />
-									) : (
-										<FaPlay />
-									)}
-								</div>
-
-								<FaForward
-									onClick={onHitgoForward}
-									className="cursor-pointer"
-								/>
-								<FaStepForward className="cursor-pointer" />
-							</div>
-							<div className=" flex gap-3">
-								<div>
-									<TiArrowShuffle
-										className={`${
-											playerState.shuffle_state
-												? "selectedColor"
-												: ""
-										}`}
-									/>
-								</div>
-								<div className="text-xs">
-									{currentCalced}/{durationCalced}
-								</div>
-								<div>
-									{playerState.repeat_state === "track" ? (
-										<MdRepeatOne className="selectedColor" />
-									) : (
-										<MdRepeat
-											className={`${
-												playerState.repeat_state ===
-												"off"
-													? ""
-													: "selectedColor"
-											}`}
-										/>
-									)}
-								</div>
-							</div>
+						<FaForward
+							onClick={onHitGoForward}
+							className="cursor-pointer"
+						/>
+						<FaStepForward
+							onClick={onHitGoForwardStep}
+							className="cursor-pointer"
+						/>
+					</div>
+					<div className=" flex gap-3">
+						<div className="cursor-pointer" onClick={onHitShuffle}>
+							<TiArrowShuffle
+								className={`${
+									playerState.shuffle_state
+										? "selectedColor"
+										: ""
+								}`}
+							/>
 						</div>
-					</>
-				)}
+						<div className="text-xs">
+							{currentCalced}/{durationCalced}
+						</div>
+						<div onClick={onHitReapet} className="cursor-pointer">
+							{playerState.repeat_state === "track" ? (
+								<MdRepeatOne className="selectedColor" />
+							) : (
+								<MdRepeat
+									className={`${
+										playerState.repeat_state === "off"
+											? ""
+											: "selectedColor"
+									}`}
+								/>
+							)}
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	);

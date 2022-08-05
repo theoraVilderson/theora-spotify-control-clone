@@ -75,12 +75,13 @@ function Sidebar() {
 	useEffect(() => {
 		dispatch({ type: actionTypes.SET_ACTIVE_MENU, payload: activeMenuId });
 	}, [activeMenuId]);
+
+	const activeMusicItem = playerState?.item;
+
 	const [updateOnDefaultChange, setUpdateOnDefaultChange] = useState(true);
 	const [updateOnDefaultIsDisabled, setUpdateOnDefaultIsDisabled] =
 		useState(false);
-	const [range, setRange] = useState(
-		~~((playerState?.progress_ms ?? 1000) / 1000)
-	);
+	const [range, setRange] = useState(50);
 	const seekTo = function () {
 		fetcher(`/api/player/volume?volume_percent=${~~range}`, {
 			method: "PUT",
@@ -180,12 +181,18 @@ function Sidebar() {
 						</div>
 					</div>
 				</div>
-				<div className="flex justify-around items-center">
+				<div
+					className={`flex justify-around items-center ${
+						!activeMusicItem ? "hidden" : ""
+					}`}
+				>
 					<BsFillVolumeUpFill />
 
 					<SliderRange
 						defaultValues={[
-							playerState?.device?.volume_percent ?? 50,
+							!updateOnDefaultChange
+								? range
+								: playerState?.device?.volume_percent ?? 50,
 						]}
 						onSliderChange={([val]) => {
 							setRange(val);

@@ -9,11 +9,15 @@ import { GoCheck } from "@react-icons/all-files/go/GoCheck";
 import { RingLoader } from "./Loading";
 import SongItem from "./SongItem";
 
+import { Link } from "react-router-dom";
 function Suggestion({ feedType }) {
 	const [globalData, dispatch] = useGlobalContext();
-	const { userInfo } = globalData;
+	const { userInfo, playerQueue: allPlayerQueue, activeMusic } = globalData;
 	const fetcher = useFetcher([globalData, dispatch]);
 
+	const playerQueue = allPlayerQueue[feedType] ?? {};
+
+	const activeMusicId = activeMusic?.id;
 	const [suggestions, setSuggestions] = useState({});
 	const backgroundImg = useMemo(() => {
 		const targetImage = suggestions?.targetArtist?.images?.reduce?.(
@@ -24,21 +28,39 @@ function Suggestion({ feedType }) {
 		return targetImage?.url;
 	}, [suggestions]);
 	const [isFollowed, setIsFollowed] = useState(false);
+	const [loadingPlaylistDone, setLoadingPlaylistDone] = useState(false);
+
 	useEffect(() => {
+		if (activeMusicId == null && !Object.keys(suggestions).length) return;
+		setLoadingPlaylistDone(false);
 		fetcher("/api/suggestions")
 			.then((e) => {
 				if (e.data.error) {
 					return;
 				}
 				console.log(e.data.result);
+
+				const res = e.data.result.tracks.reduce((e, k, key) => {
+					e[k.id] = k;
+					e[k.id].orderId = key;
+					return e;
+				}, {});
+				dispatch({
+					type: actionTypes.SET_PLAYER_QUEUE,
+					payload: { name: feedType, data: res },
+				});
 				setSuggestions(e.data.result);
-				setIsFollowed(e.data.result?.targetArtist?.isFollowed);
 			})
 			.catch((e) => {
 				console.log(e);
-				alert("sorry couldn't get Seggestions");
+				// alert("sorry couldn't get Seggestions");
+			})
+			.finally(() => {
+				setLoadingPlaylistDone(true);
 			});
-	}, []);
+	}, [activeMusicId]);
+
+	// SET_PLAYER_STATE
 
 	const [isProcessFollow, setIsProcessFollow] = useState(false);
 
@@ -91,9 +113,14 @@ function Suggestion({ feedType }) {
 						<div className="flex flex-col gap-2">
 							<h1
 								title={suggestions?.targetArtist?.name}
-								className="text-5xl font-bold activeColor max-w-[350px] truncate"
+								className="text-5xl font-bold activeColor max-w-[350px] truncate min-h-[4rem]"
 							>
-								{suggestions?.targetArtist?.name}
+								<Link
+									to={`/artist/${suggestions?.targetArtist?.id}`}
+									className="border-b break-all hover:border-current border-solid border-transparent font-bold activeColor"
+								>
+									{suggestions?.targetArtist?.name}
+								</Link>
 							</h1>
 							<div className="flex gap-2 items-center">
 								<RiUserFollowLine className="activeColor" />
@@ -109,6 +136,11 @@ function Suggestion({ feedType }) {
 								style={{
 									backgroundColor:
 										"var(--text-bright-accent)",
+								}}
+								onClick={() => {
+									document
+										.querySelector(".player_playing")
+										?.click?.();
 								}}
 							>
 								Play
@@ -157,6 +189,11 @@ function Suggestion({ feedType }) {
 					);
 				})}
 			</div>
+			{!loadingPlaylistDone && (
+				<div className="flex justify-center items-center">
+					<RingLoader />
+				</div>
+			)}
 		</div>
 	);
 }

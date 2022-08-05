@@ -33,7 +33,7 @@ function UserPlayLists() {
 			if (!playlists[e.id]) lastRes[e.id] = e;
 		});
 
-		dispatch({ type: actionTypes.SET_PLAYISTS, payload: lastRes });
+		dispatch({ type: actionTypes.SET_PLAYLISTS, payload: lastRes });
 		let nextLink = e.data.result.next;
 		nextLink = !nextLink ? null : new URL(nextLink).search.slice(1);
 		setNextLinkParams(nextLink);
@@ -96,13 +96,18 @@ function UserPlayLists() {
 				onUpdate={onNewLoad}
 			>
 				<div>
-					{Object.values(playlists).map((item) => {
-						return (
+					{Object.values(playlists).map((item, key) => {
+						return item ? (
 							<PlayListItem
 								active={item.id === activePlayList}
 								key={item.id}
 								{...item}
 							/>
+						) : (
+							<div
+								className="hidden"
+								key={Object.keys(playlists)[key]}
+							></div>
 						);
 					})}
 				</div>

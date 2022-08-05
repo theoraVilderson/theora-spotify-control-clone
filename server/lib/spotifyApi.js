@@ -75,7 +75,7 @@ class SpotifyApi {
 		try {
 			res = await func.bind(this)();
 		} catch (e) {
-			console.log(e?.response?.data?.error ?? e);
+			// console.log(e?.response?.data?.error ?? e);
 			return this.handleGlobalErrors(e);
 		}
 
@@ -155,6 +155,60 @@ class SpotifyApi {
 			return res.data;
 		});
 	}
+	async getFullyPlayList(playlistId, offset = 0, limit = 20) {
+		return this.requestWrapper(async () => {
+			const playListInfo = await this.getPlayList(playlistId);
+			const playListItems = await this.getPlayListItems(
+				playlistId,
+				offset,
+				limit
+			);
+
+			const self = await this.getMe();
+
+			if (playListInfo.error) throw playListInfo;
+			if (playListItems.error) throw playListItems;
+			if (self.error) throw self;
+			const isPlaylistFollowed = await this.isTargetFollowed(
+				playlistId,
+				"playlist",
+				self.id
+			);
+			if (isPlaylistFollowed.error) throw isPlaylistFollowed;
+
+			const allTracksId = playListItems.items.map((e) => e.track.id);
+			const tracksLike = await this.isLikedTarget(allTracksId, "track");
+			if (tracksLike.error) throw tracksLike;
+
+			playListItems.items = playListItems.items.map((e, k) => {
+				return { ...e, track: { ...e.track, isLiked: tracksLike[k] } };
+			});
+
+			return {
+				playlistInfo: {
+					...playListInfo,
+					isFollowed: isPlaylistFollowed[0],
+				},
+				playlistItems: playListItems,
+			};
+		});
+	}
+	async getPlayList(playlistId) {
+		return this.requestWrapper(async () => {
+			const url = `playlists/${playlistId} `;
+			const res = await this.userReq.get(url);
+			return res.data;
+		});
+	}
+	async getPlayListItems(playlistId, offset = 0, limit = 20) {
+		return this.requestWrapper(async () => {
+			const data = { offset, limit };
+			const query = querystring.stringify(data);
+			const url = `playlists/${playlistId}/tracks?${query}`;
+			const res = await this.userReq.get(url);
+			return res.data;
+		});
+	}
 	async getTopArtists() {
 		return this.requestWrapper(async () => {
 			const url = `me/top/artists`;
@@ -162,31 +216,58 @@ class SpotifyApi {
 			return res.data;
 		});
 	}
-	async isTargetFollowed(artistId, type) {
+	async isTargetFollowed(targetId, type, userIds) {
 		return this.requestWrapper(async () => {
-			const url = `me/following/contains?type=${type}&ids=${artistId}`;
+			const playListLink = `playlists/${targetId}/followers/contains?ids=${userIds}`;
+			const isPlayList = type === "playlist";
+			const url = isPlayList
+				? playListLink
+				: `me/following/contains?type=${type}&ids=${targetId}`;
+
 			const res = await this.userReq.get(url);
 
 			return res.data;
 		});
 	}
-	async isFollowed(targetId) {
+	async isFollowed(targetId, playlistId) {
 		const isArtistFollowed = await this.isTargetFollowed(
 			targetId,
 			"artist"
 		);
-		const isUserFollowed = await this.isTargetFollowed(targetId, "artist");
+		const isUserFollowed = await this.isTargetFollowed(targetId, "user");
+		let isPlaylistFollowed;
 		if (isArtistFollowed.error) throw isArtistFollowed;
 		if (isUserFollowed.error) throw isUserFollowed;
 
+		if (playlistId) {
+			isPlaylistFollowed = await this.isTargetFollowed(
+				playlistId,
+				"playlist",
+				targetId
+			);
+			if (isPlaylistFollowed.error) throw isPlaylistFollowed;
+		}
+
 		return isArtistFollowed.map((e, key) => {
-			return e || isUserFollowed[key];
+			return (
+				e ||
+				isUserFollowed[key] ||
+				(playlistId && isPlaylistFollowed[key])
+			);
 		});
 	}
-	async follow(targetId, type) {
+	async follow(targetId, type, isPublic = true) {
 		return this.requestWrapper(async () => {
-			const url = `me/following?type=${type}&ids=${targetId}`;
-			const res = await this.userReq.put(url, {
+			const playListLink = `playlists/${targetId}/followers`;
+			const isPlayList = type === "playlist";
+
+			const url = isPlayList
+				? playListLink
+				: `me/following?type=${type}&ids=${targetId}`;
+
+			const data = isPlayList ? { isPublic } : null;
+
+			const res = await this.userReq.put(url, data, {
 				validateStatus: function (status) {
 					return status >= 200 && status <= 204; // default
 				},
@@ -196,7 +277,12 @@ class SpotifyApi {
 	}
 	async unFollow(targetId, type) {
 		return this.requestWrapper(async () => {
-			const url = `me/following?type=${type}&ids=${targetId}`;
+			const playListLink = `playlists/${targetId}/followers`;
+			const isPlayList = type === "playlist";
+
+			const url = isPlayList
+				? playListLink
+				: `me/following?type=${type}&ids=${targetId}`;
 			const res = await this.userReq.delete(url, {
 				validateStatus: function (status) {
 					return status >= 200 && status <= 204; // default
@@ -257,12 +343,7 @@ class SpotifyApi {
 			if (!items.length) {
 				url += "seed_genres=classical";
 			} else {
-				const targetArtist = items.reduce(
-					(e, n) => {
-						return e.popularity <= n.popularity ? n : e;
-					},
-					{ popularity: 0 }
-				);
+				const targetArtist = items[~~(Math.random() * items.length)];
 				url += `seed_artists=${targetArtist.id}`;
 			}
 
@@ -273,8 +354,9 @@ class SpotifyApi {
 			);
 			if (targetArtist.error) throw targetArtist;
 
-			const isFollowed = await this.isFollowed(
-				suggestionsTracks.data.seeds[0].id
+			const isFollowed = await this.isTargetFollowed(
+				suggestionsTracks.data.seeds[0].id,
+				"artist"
 			);
 			if (isFollowed.error) throw isFollowed;
 
@@ -352,6 +434,13 @@ class SpotifyApi {
 		return this.requestWrapper(async () => {
 			const url = `me/player?additional_types=${type}`;
 			const res = await this.userReq.get(url);
+			const tracksLike = await this.isLikedTarget(
+				res.data.item.id,
+				"track"
+			);
+			if (tracksLike.error) throw tracksLike;
+			res.data.item.isLiked = tracksLike[0];
+
 			return res.data;
 		});
 	}
@@ -377,14 +466,42 @@ class SpotifyApi {
 			return { position_ms: true };
 		});
 	}
-	async playerPlayPause(type = "play") {
+	async playerRepeat(state) {
 		return this.requestWrapper(async () => {
-			const url = `me/player/${type}`;
+			const url = `me/player/repeat?state=${state}`;
 			const res = await this.userReq.put(url, {
 				validateStatus: function (status) {
 					return status >= 200 && status <= 204; // default
 				},
 			});
+			return { [state + "_repeat"]: true };
+		});
+	}
+	async playerShuffle(state) {
+		return this.requestWrapper(async () => {
+			const url = `me/player/shuffle?state=${state ? "true" : "false"}`;
+			const res = await this.userReq.put(url, {
+				validateStatus: function (status) {
+					return status >= 200 && status <= 204; // default
+				},
+			});
+			return { shuffle: state };
+		});
+	}
+	async playerPlayPause(type = "play", uris = []) {
+		uris = uris.filter((e) => e);
+		const shouldUseUris = type === "play" && uris.length;
+
+		return this.requestWrapper(async () => {
+			const url = `me/player/${type}`;
+			const data = !shouldUseUris ? null : { uris };
+
+			const res = await this.userReq.put(url, data, {
+				validateStatus: function (status) {
+					return status >= 200 && status <= 204; // default
+				},
+			});
+
 			return { [type]: true };
 		});
 	}

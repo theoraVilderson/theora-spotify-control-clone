@@ -9,18 +9,30 @@ import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import "./SongItem.css";
 function SongItem({ songInfo, numberId }) {
-	const {
-		name,
-		album: { images },
-		artists,
-		id,
-		duration_ms,
-		isLiked,
-		explicit,
-	} = JSON.parse(songInfo);
+	const songDataParsed = JSON.parse(songInfo);
 
 	const [globalData, dispatch] = useGlobalContext();
 	const { userInfo, activeMusic } = globalData;
+
+	const [
+		{
+			name,
+			album: { images },
+			artists,
+			id,
+			duration_ms,
+			isLiked,
+			explicit,
+		},
+		setSongData,
+	] = useState(songDataParsed);
+
+	useEffect(() => {
+		if (activeMusic.id === id) {
+			setSongData(activeMusic);
+		}
+	}, [songDataParsed, activeMusic]);
+
 	const fetcher = useFetcher([globalData, dispatch]);
 
 	const backgroundImg = useMemo(() => {
@@ -35,7 +47,7 @@ function SongItem({ songInfo, numberId }) {
 
 	useEffect(() => {
 		setLike(isLiked);
-	}, [isLiked]);
+	}, [isLiked, activeMusic]);
 
 	const durationCalced = useMemo(() => {
 		const hours = ~~((duration_ms / 1000 / 60 / 60) % 24);
@@ -60,6 +72,14 @@ function SongItem({ songInfo, numberId }) {
 					return;
 				}
 				setLike(!like);
+
+				dispatch({
+					type: actionTypes.SET_ACTIVE_MUSIC,
+					payload: {
+						...activeMusic,
+						isLiked: !like,
+					},
+				});
 			})
 			.catch((e) => {
 				console.log(e);
@@ -70,12 +90,36 @@ function SongItem({ songInfo, numberId }) {
 			});
 	};
 	const isActiveSong = id === activeMusic;
+	const [isReuqstingToSongPlay, setIsReuqstingToSongPlay] = useState(false);
+
+	const onSelectSong = () => {
+		if (isActiveSong || isReuqstingToSongPlay) return;
+
+		setIsReuqstingToSongPlay(true);
+
+		fetcher(`/api/player/play/?uris=${id}`, {
+			method: "PUT",
+		})
+			.then((e) => {
+				if (e.data.error) {
+					return;
+				}
+			})
+			.catch((e) => {
+				console.log(e);
+				alert(`sorry couldn't play the ${name}`);
+			})
+			.finally(() => {
+				setIsReuqstingToSongPlay(false);
+			});
+	};
 
 	return (
 		<div
 			className={`song  flex flex-col sm:flex-row justify-between cursor-pointer group ${
 				isActiveSong ? "selectedColor" : "activeColorHover"
 			} `}
+			onDoubleClick={onSelectSong}
 		>
 			<div className="flex gap-2 p-3 flex-col sm:flex-row items-center flex-wrap sm:flex-nowrap sm:items-center">
 				<div
@@ -107,10 +151,11 @@ function SongItem({ songInfo, numberId }) {
 						) : null}
 						{artists.map((e, k) => {
 							return (
-								<>
+								<span key={k}>
 									{(k && ",") || null}
 
 									<Link
+										key={k}
 										to={`/artist/${e.id}`}
 										className={`border-b break-all hover:border-current border-solid border-transparent ${
 											(k && "mx-1") || "mr-1"
@@ -118,7 +163,7 @@ function SongItem({ songInfo, numberId }) {
 									>
 										{e.name}
 									</Link>
-								</>
+								</span>
 							);
 						})}
 					</div>
