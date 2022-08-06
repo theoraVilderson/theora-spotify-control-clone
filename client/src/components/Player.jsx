@@ -46,6 +46,11 @@ function Player({ feedType }) {
 		fetcher(`/api/player/`)
 			.then((e) => {
 				if (e.data.error) {
+					e.data.error === "COULD_NOT_GET_PLAYER_STATE" &&
+						dispatch({
+							type: actionTypes.SET_ACTIVE_MUSIC,
+							payload: "",
+						});
 					return;
 				}
 				if (!e?.data?.result) return;
@@ -60,7 +65,6 @@ function Player({ feedType }) {
 				});
 			})
 			.catch((e) => {
-				console.log(e);
 				// alert(`sorry couldn't get currently-playing`);
 			})
 			.finally(() => {});

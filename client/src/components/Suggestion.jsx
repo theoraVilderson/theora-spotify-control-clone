@@ -31,7 +31,7 @@ function Suggestion({ feedType }) {
 	const [loadingPlaylistDone, setLoadingPlaylistDone] = useState(false);
 
 	useEffect(() => {
-		if (activeMusicId == null && !Object.keys(suggestions).length) return;
+		if (activeMusic == null && !Object.keys(suggestions).length) return;
 		setLoadingPlaylistDone(false);
 		fetcher("/api/suggestions")
 			.then((e) => {
@@ -58,7 +58,7 @@ function Suggestion({ feedType }) {
 			.finally(() => {
 				setLoadingPlaylistDone(true);
 			});
-	}, [activeMusicId]);
+	}, [activeMusic]);
 
 	// SET_PLAYER_STATE
 
