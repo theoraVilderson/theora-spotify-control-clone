@@ -1,0 +1,33 @@
+.autoArrangeText__parent--right {
+    text-align: right;
+}
+
+.autoArrangeText__parent--left {
+    text-align: left;
+}
+
+.autoArrangeText__chunk {
+    word-break: break-all;
+}
+.autoArrangeText__chunker {
+    display: flex;
+    gap: 10px;
+    white-space: normal;
+    flex-wrap: wrap;
+    word-break: break-all;
+}
+
+.autoArrangeText__parent--right .autoArrangeText__chunker {
+    justify-content: end;
+}
+.autoArrangeText__parent--left .autoArrangeText__chunker {
+    justify-content: start;
+}
+
+.autoArrangeText__parent--line-right .autoArrangeText__chunk {
+    direction: rtl;
+}
+
+.autoArrangeText__parent--line-left .autoArrangeText__chunk {
+    direction: ltr;
+}

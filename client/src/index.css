@@ -31,3 +31,8 @@ input[type="text"]::placeholder {
 .selectedColorHover:hover {
 	color: var(--text-bright-accent);
 }
+
+.selectedBgColor,
+.selectedBgColorHover:hover {
+	background-color: var(--text-bright-accent);
+}

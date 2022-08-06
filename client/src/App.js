@@ -82,6 +82,11 @@ function App() {
               element={<Page feedType={"Artist"} />}
             />
             <Route path="/user/:userId" element={<Page feedType={"User"} />} />
+            <Route path="/show/:showId" element={<Page feedType={"Show"} />} />
+            <Route
+              path="/episode/:episodeId"
+              element={<Page feedType={"Episode"} />}
+            />
 
             <Route path="*" element={<Page feedType={"Suggestion"} />} />
           </Routes>

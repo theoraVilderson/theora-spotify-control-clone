@@ -1,12 +1,16 @@
+import { useEffect, useState, useMemo } from "react";
+
 import { useGlobalContext } from "../context/globalContext";
 import { actionTypes } from "../reducer/globalReducer";
+
 import useFetcher from "../hooks/fetcher";
+
 import PlayListItem from "./PlayListItem";
-import { useEffect, useState } from "react";
+import { RingCenterdLoader } from "./Loading";
+
 import { FaPlus } from "@react-icons/all-files/fa/FaPlus";
 
 import { Scrollbar } from "react-scrollbars-custom";
-import { RingLoader } from "./Loading";
 import { useParams } from "react-router-dom";
 
 function UserPlayLists() {
@@ -14,16 +18,22 @@ function UserPlayLists() {
 
 	const [globalData, dispatch] = useGlobalContext();
 	const { userInfo, playlists, activePlayList } = globalData;
+
 	const fetcher = useFetcher([globalData, dispatch]);
 
-	const [nextLinkParmas, setNextLinkParams] = useState(null);
+	const [nextPlaylistItemsLink, setNextPlaylistItemsLink] = useState(null);
+
 	const [totalPlaylist, setTotalPlaylist] = useState("");
 
-	const [loadingPlayistDone, setLoadingPlayistDone] = useState(true);
+	const [loadingPlaylistDone, setLoadingPlaylistDone] = useState(true);
 
-	const onPlyalistHandler = (e) => {
+	const playlistsArray = Object.values(playlists);
+
+	const activePlayListItem = playlists?.[activePlayList];
+
+	const playListDataHandler = (e) => {
 		if (e.data.error) {
-			alert("sorry couldn't get playlist");
+			console.error("sorry couldn't get playlist");
 			return;
 		}
 
@@ -34,34 +44,50 @@ function UserPlayLists() {
 		});
 
 		dispatch({ type: actionTypes.SET_PLAYLISTS, payload: lastRes });
-		let nextLink = e.data.result.next;
-		nextLink = !nextLink ? null : new URL(nextLink).search.slice(1);
-		setNextLinkParams(nextLink);
+		setNextPlaylistItemsLink(e.data.result.next);
 		setTotalPlaylist(e.data.result.total);
 	};
-	const onLoadMore = () => {
-		if (!nextLinkParmas) return 1;
+	const loadMorePlayListItems = ({ forceToRestart = false } = {}) => {
+		if (!userInfo?.id) return;
 
-		setLoadingPlayistDone(false);
+		if (!loadingPlaylistDone) return;
 
-		if (!userInfo.id) return;
-		fetcher(`/api/playlists?userId=${userInfo.id}${"&" + nextLinkParmas}`)
-			.then(onPlyalistHandler)
-			.catch((e) => {
-				console.error(e);
-				alert("sorry couldn't get playlist");
-			})
+		setLoadingPlaylistDone(false);
+
+		// just get search params if exists
+		const nextLink = !nextPlaylistItemsLink
+			? ""
+			: new URL(nextPlaylistItemsLink).search.slice(1);
+
+		// force it means start in to just fetch first part
+		let query = forceToRestart ? "limit=10" : nextLink;
+		query = query ? "&" + query : "";
+
+		const url = `/api/playlists?userId=${userInfo.id}${query}`;
+
+		fetcher(url)
+			.then(playListDataHandler)
+			.catch(console.error)
 			.finally((e) => {
-				setLoadingPlayistDone(true);
+				setLoadingPlaylistDone(true);
 			});
 	};
-	const onNewLoad = (e) => {
-		if (!loadingPlayistDone) {
+	const loadNewPlayListItem = (e) => {
+		if (!loadingPlaylistDone) {
 			return;
 		}
-		if (e.clientHeight + e.scrollTop >= e.scrollHeight) {
-			onLoadMore();
-		}
+
+		const isLoadedAllItems =
+			totalPlaylist === "" || totalPlaylist > playlistsArray.length;
+
+		const isRechedToEndOfScroll =
+			e.clientHeight + e.scrollTop >= e.scrollHeight;
+
+		// load more if reached to end of scroll and if is there new items
+
+		if (!(isRechedToEndOfScroll && isLoadedAllItems)) return;
+
+		loadMorePlayListItems();
 	};
 
 	useEffect(() => {
@@ -70,13 +96,9 @@ function UserPlayLists() {
 
 	useEffect(() => {
 		if (!userInfo?.id) return;
-		fetcher(`/api/playlists?userId=${userInfo.id}&limit=10`)
-			.then(onPlyalistHandler)
-			.catch((e) => {
-				console.error(e);
-				alert("sorry couldn't get playlist");
-			});
-	}, [userInfo]);
+		// use forceToRestart to just update the infos like totalPlayList number
+		loadMorePlayListItems({ forceToRestart: true });
+	}, [userInfo, playlists]);
 
 	return (
 		<div className="sidebar__playLists mb-2 flex-1 flex flex-col justify-center ">
@@ -85,18 +107,18 @@ function UserPlayLists() {
 				<span className="text-xs">
 					PLAYLISTS {totalPlaylist ? `(${totalPlaylist})` : null}
 				</span>
-				<FaPlus className="activeColor cursor-pointer" />
+				<FaPlus className="activeColor cursor-pointer mr-2" />
 			</h2>
 
 			<Scrollbar
-				style={{
-					height: 140,
-				}}
+				style={{ height: 140 }}
 				removeTrackYWhenNotUsed={+totalPlaylist <= 5}
-				onUpdate={onNewLoad}
+				onUpdate={loadNewPlayListItem}
 			>
 				<div>
-					{Object.values(playlists).map((item, key) => {
+					{playlistsArray.map((item, key) => {
+						// if item is deleted then use empty div
+						// (for having place for undo deleting)
 						return item ? (
 							<PlayListItem
 								active={item.id === activePlayList}
@@ -111,11 +133,8 @@ function UserPlayLists() {
 						);
 					})}
 				</div>
-				{!loadingPlayistDone && (
-					<div className="flex justify-center items-center">
-						<RingLoader />
-					</div>
-				)}
+
+				<RingCenterdLoader isLoaded={loadingPlaylistDone} />
 			</Scrollbar>
 		</div>
 	);

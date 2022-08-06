@@ -8,32 +8,22 @@ import { MdExplicit } from "@react-icons/all-files/md/MdExplicit";
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import "./SongItem.css";
-function SongItem({ songInfo, numberId }) {
-	const songDataParsed = JSON.parse(songInfo);
-
+function SongItem({ songInfo, numberId, feedType }) {
 	const [globalData, dispatch] = useGlobalContext();
 	const { userInfo, activeMusic } = globalData;
 
-	const [
-		{
-			name,
-			album: { images },
-			artists,
-			id,
-			duration_ms,
-			isLiked,
-			explicit,
-		},
-		setSongData,
-	] = useState(songDataParsed);
+	const [{ name, artists, id, duration_ms, isLiked, explicit }, setSongData] =
+		useState(songInfo);
 
 	useEffect(() => {
 		if (activeMusic.id === id) {
 			setSongData(activeMusic);
 		}
-	}, [songDataParsed, activeMusic]);
+	}, [songInfo, activeMusic]);
 
 	const fetcher = useFetcher([globalData, dispatch]);
+
+	const images = songInfo?.album?.images ?? songInfo?.images;
 
 	const backgroundImg = useMemo(() => {
 		const targetImage = images?.reduce?.((e, n) => {
@@ -64,7 +54,7 @@ function SongItem({ songInfo, numberId }) {
 
 		setIsLiking(true);
 
-		fetcher(`/api/track/like/${id}`, {
+		fetcher(`/api/${songInfo.type}/like/${id}`, {
 			method: !like ? "PUT" : "DELETE",
 		})
 			.then((e) => {
@@ -89,7 +79,7 @@ function SongItem({ songInfo, numberId }) {
 				setIsLiking(false);
 			});
 	};
-	const isActiveSong = id === activeMusic;
+	const isActiveSong = id === activeMusic?.id;
 	const [isReuqstingToSongPlay, setIsReuqstingToSongPlay] = useState(false);
 
 	const onSelectSong = () => {
@@ -139,7 +129,7 @@ function SongItem({ songInfo, numberId }) {
 				<div className="text-xs flex flex-col justify-around">
 					<div>
 						<Link
-							to={`/track/${id}`}
+							to={`/${songInfo.type}/${id}`}
 							className="border-b break-all hover:border-current border-solid border-transparent font-bold activeColor"
 						>
 							{name}
@@ -149,7 +139,7 @@ function SongItem({ songInfo, numberId }) {
 						{explicit ? (
 							<MdExplicit className="w-4 h-4 m-2 ml-0" />
 						) : null}
-						{artists.map((e, k) => {
+						{artists?.map?.((e, k) => {
 							return (
 								<span key={k}>
 									{(k && ",") || null}
@@ -166,6 +156,16 @@ function SongItem({ songInfo, numberId }) {
 								</span>
 							);
 						})}
+						{!songInfo.show ? null : (
+							<span key={songInfo.show.id}>
+								<Link
+									to={`/show/${songInfo.show.id}`}
+									className={`border-b break-all hover:border-current border-solid border-transparent  `}
+								>
+									{songInfo.show.name}
+								</Link>
+							</span>
+						)}
 					</div>
 				</div>
 			</div>

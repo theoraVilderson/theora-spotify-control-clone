@@ -18,6 +18,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 
 // TODO make the timer for updating data faster
+// TODO fix play Btn Bug
 function Player({ feedType }) {
 	const [globalData, dispatch] = useGlobalContext();
 	let {
@@ -65,6 +66,7 @@ function Player({ feedType }) {
 				});
 			})
 			.catch((e) => {
+				console.log(e);
 				// alert(`sorry couldn't get currently-playing`);
 			})
 			.finally(() => {});
@@ -203,8 +205,14 @@ function Player({ feedType }) {
 
 		return lastRes;
 	};
-	const nextPlayIds = useMemo(() => calcNextIds(1), [playerQueue]);
-	const perviousPlayIds = useMemo(() => calcNextIds(-1), [playerQueue]);
+	const nextPlayIds = useMemo(
+		() => calcNextIds(1),
+		[playerQueue, activeMusicItem]
+	);
+	const perviousPlayIds = useMemo(
+		() => calcNextIds(-1),
+		[playerQueue, activeMusicItem]
+	);
 
 	const onHitGoForwardStep = () => {
 		if (!nextPlayIds) return;
@@ -329,7 +337,7 @@ function Player({ feedType }) {
 							<div className="text-xs flex flex-col justify-around">
 								<div>
 									<Link
-										to={`/track/${activeMusicItem.id}`}
+										to={`/${activeMusicItem.type}/${activeMusicItem.id}`}
 										className="border-b break-all hover:border-current border-solid border-transparent font-bold activeColor"
 									>
 										{activeMusicItem.name}
@@ -339,7 +347,7 @@ function Player({ feedType }) {
 									{activeMusicItem.explicit ? (
 										<MdExplicit className="w-4 h-4 m-2 ml-0" />
 									) : null}
-									{activeMusicItem.artists.map((e, k) => {
+									{activeMusicItem?.artists?.map?.((e, k) => {
 										return (
 											<span key={k}>
 												{(k && ",") || null}
@@ -355,6 +363,16 @@ function Player({ feedType }) {
 											</span>
 										);
 									})}
+									{!activeMusicItem.show ? null : (
+										<span key={activeMusicItem.show.id}>
+											<Link
+												to={`/show/${activeMusicItem.show.id}`}
+												className={`border-b break-all hover:border-current border-solid border-transparent  `}
+											>
+												{activeMusicItem.show.name}
+											</Link>
+										</span>
+									)}
 								</div>
 							</div>
 						}

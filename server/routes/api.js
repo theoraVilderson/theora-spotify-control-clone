@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-
+const lyricsFinder = require("lyrics-finder");
 // check if user live
 
 async function isUserLive(req) {
@@ -342,11 +342,79 @@ router
 
 		return res.json({ status: true, data: { result: unLike } });
 	});
+router.get("/track/lyrics", async (req, res) => {
+	const { artists, name } = req.query;
 
+	const lyrics = (await lyricsFinder(artists, name)) || {
+		error: "COULD_NOT_FIND_LYRICS",
+	};
+	const error = globalErrorHandler("COULD_NOT_FIND_LYRICS", lyrics);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: lyrics } });
+});
+router.get("/track/:trackId", async (req, res) => {
+	const { trackId } = req.params;
+
+	const track = await req.spotifyApi.getTrack(trackId);
+	const error = globalErrorHandler("COULD_NOT_GET_TRACK", track);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: track } });
+});
+
+// Episode Route
+router
+	.route("/episode/like/:episodeId")
+	.get(async (req, res) => {
+		const { episodeId } = req.params;
+
+		const isLiked = await req.spotifyApi.isLikedTarget(
+			episodeId,
+			"episode"
+		);
+		const error = globalErrorHandler("COULD_NOT_CHECK_LIKE", isLiked);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: isLiked } });
+	})
+	.put(async (req, res) => {
+		const { episodeId } = req.params;
+
+		const like = await req.spotifyApi.likeTarget(episodeId, "episode");
+		const error = globalErrorHandler("COULD_NOT_LIKE", like);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: like } });
+	})
+	.delete(async (req, res) => {
+		const { episodeId } = req.params;
+
+		const unLike = await req.spotifyApi.unLikeTarget(episodeId, "episode");
+		const error = globalErrorHandler("COULD_NOT_UNLIKE", unLike);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: unLike } });
+	});
 // Player Route
 
 router.get("/player/currently-playing", async (req, res) => {
-	const { additional_types = "track" } = req.query;
+	const { additional_types } = req.query;
 	const currentlyPlaying = await req.spotifyApi.getCurrentlyPlaying(
 		additional_types
 	);
@@ -386,11 +454,15 @@ router.put("/player/seek", async (req, res) => {
 	return res.json({ status: true, data: { result: playerSeek } });
 });
 router.put("/player/play", async (req, res) => {
-	let { uris = "" } = req.query;
+	let { uris = [], context_uri = "", offset = "" } = req.query;
 
 	uris = uris.split(",");
 
-	const playerPlay = await req.spotifyApi.playerPlayPause("play", uris);
+	const playerPlay = await req.spotifyApi.playerPlayPause("play", {
+		uris,
+		context_uri,
+		offset,
+	});
 	const error = globalErrorHandler("COULD_NOT_PLAY", playerPlay);
 
 	if (error) {

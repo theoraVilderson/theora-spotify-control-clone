@@ -86,7 +86,7 @@ function PlayList({ feedType }) {
 			})
 			.catch((e) => {
 				console.log(e);
-				alert("sorry couldn't get playlistItems");
+				// alert("sorry couldn't get playlistItems");
 			})
 			.finally(() => {
 				setLoadingPlaylistDone(true);
@@ -139,15 +139,20 @@ function PlayList({ feedType }) {
 				setIsFollowed(!isFollowed);
 
 				const update = !!playlists[playlistId];
-				if (playlists[playlistId] != null && isFollowed) {
-					playlists[playlistId] = "";
-				} else if (playlists[playlistId] != null && !isFollowed) {
-					playlists[playlistId] = playlistInfo;
+				let newData = playlists;
+				if (playlists[playlistId] != null && isFollowed === true) {
+					newData = { ...newData, [playlistId]: "" };
+				} else if (isFollowed === false) {
+					if (playlists[playlistId] != null) {
+						newData = { ...newData, [playlistId]: playlistInfo };
+					} else {
+						newData = { [playlistId]: playlistInfo, ...newData };
+					}
 				}
 
 				dispatch({
 					type: actionTypes.SET_PLAYLISTS,
-					payload: playlists,
+					payload: newData,
 				});
 			})
 			.catch((e) => {
@@ -190,7 +195,7 @@ function PlayList({ feedType }) {
 						<div className="flex flex-col gap-2">
 							<h1
 								title={playlistInfo?.name}
-								className="text-5xl font-bold activeColor max-w-[350px] truncate min-h-[4rem]"
+								className="md:text-5xl text-lg font-bold activeColor max-w-[350px] md:truncate min-h-[4rem]"
 							>
 								<Link
 									to={`/playlist/${playlistId}`}
@@ -267,11 +272,7 @@ function PlayList({ feedType }) {
 				{playlistItems?.items?.map?.((e, k) => {
 					e = e.track;
 					return (
-						<SongItem
-							key={e.id}
-							numberId={k + 1}
-							songInfo={JSON.stringify(e)}
-						/>
+						<SongItem key={e.id} numberId={k + 1} songInfo={e} />
 					);
 				})}
 			</div>

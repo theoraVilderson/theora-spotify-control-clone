@@ -75,12 +75,6 @@ const reducer = (state, { type, payload } = {}) => {
 		case LOG_OUT_USER:
 			cookieHandler.delete("accessToken");
 			cookieHandler.delete("refreshToken");
-			// setTimeout(
-			// 	() =>
-			// 		(window.location.href =
-			// 			"https://accounts.spotify.com/en/logout")
-			// );
-
 			return { ...state, userInfo: {}, tokens: {} };
 		default:
 			return state;

@@ -10,6 +10,8 @@ import Track from "./Track";
 import Artist from "./Artist";
 import SidebarRight from "./SidebarRight";
 import User from "./User";
+import Show from "./Show";
+import Episode from "./Episode";
 
 function Feed({ feedType = "Suggestion" }) {
 	const FeedTypes = {
@@ -19,6 +21,8 @@ function Feed({ feedType = "Suggestion" }) {
 		Track: Track,
 		Artist: Artist,
 		User: User,
+		Show: Show,
+		Episode: Episode,
 	};
 
 	const [globalData, dispatch] = useGlobalContext();
@@ -41,7 +45,9 @@ function Feed({ feedType = "Suggestion" }) {
 		<main className="flex justify-around h-full w-full sticky top-0">
 			{/*<Header  />*/}
 			<section className="flex-1">
-				<TheFeed feedType={feedType} />
+				<div className="min-h-screen">
+					<TheFeed feedType={feedType} />
+				</div>
 				<Player feedType={feedType} />
 			</section>
 			<SidebarRight feedType={feedType} />

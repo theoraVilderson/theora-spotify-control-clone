@@ -15,6 +15,14 @@ export function RingLoader(props) {
 	);
 }
 
+export function RingCenterdLoader({ isLoaded, ...restProps }) {
+	return !isLoaded ? (
+		<div className="flex justify-center items-center">
+			<RingLoader />
+		</div>
+	) : null;
+}
+
 function Loading() {
 	return <div>Loading ...</div>;
 }

@@ -75,7 +75,7 @@ class SpotifyApi {
 		try {
 			res = await func.bind(this)();
 		} catch (e) {
-			// console.log(e?.response?.data?.error ?? e);
+			console.trace(e?.response?.data?.error ?? e);
 			return this.handleGlobalErrors(e);
 		}
 
@@ -370,7 +370,7 @@ class SpotifyApi {
 				return re;
 			}, {});
 
-			const currentlyPlaying = await this.getCurrentlyPlaying();
+			const currentlyPlaying = await this.getPlayerState();
 
 			const isCurrentlyPlaying = !!currentlyPlaying?.item;
 
@@ -404,9 +404,21 @@ class SpotifyApi {
 			suggestions.tracks.splice(+isCurrentlyPlaying, 0, ...recentlySongs);
 			suggestions.tracks = suggestions.tracks.slice(0, 20);
 
-			const allTracksId = suggestions.tracks.map((e) => e.id);
+			let allTracksId = suggestions.tracks.map((e) => e.id);
+			const allTracksLike = [];
+
+			if (currentlyPlaying?.item?.type === "episode") {
+				const eposideLike = await this.isLikedTarget(
+					allTracksId[0],
+					"episode"
+				);
+				if (eposideLike.error) throw eposideLike;
+				allTracksLike.push(...eposideLike);
+			}
 			const tracksLike = await this.isLikedTarget(allTracksId, "track");
 			if (tracksLike.error) throw tracksLike;
+
+			allTracksLike.push(...tracksLike);
 
 			suggestions.tracks = suggestions.tracks.map((e, k) => {
 				return { ...e, isLiked: tracksLike[k] };
@@ -415,9 +427,13 @@ class SpotifyApi {
 		});
 	}
 
-	async getCurrentlyPlaying(type = "track") {
+	async getCurrentlyPlaying(type) {
 		return this.requestWrapper(async () => {
-			const url = `me/player/currently-playing?additional_types=${type}`;
+			const query = type ? `additional_types=${type}` : "";
+			const url = `me/player/currently-playing${
+				query ? "?" + query : ""
+			}`;
+
 			const res = await this.userReq.get(url);
 			return res.data;
 		});
@@ -430,14 +446,28 @@ class SpotifyApi {
 			return res.data;
 		});
 	}
-	async getPlayerState(type = "track") {
+	async getPlayerState(type = "episode") {
 		return this.requestWrapper(async () => {
-			const url = `me/player?additional_types=${type}`;
+			const query = type ? `additional_types=${type}` : "";
+			const url = `me/player${query ? "?" + query : ""}`;
+
 			const res = await this.userReq.get(url);
+
+			if (!res.data) return {};
+
+			if (!res?.data?.item) {
+				const playingItem = await this.getCurrentlyPlaying(
+					res.data.type
+				);
+
+				res.item = playingItem;
+			}
+
 			const tracksLike = await this.isLikedTarget(
 				res.data.item.id,
-				"track"
+				res.data.item.type
 			);
+
 			if (tracksLike.error) throw tracksLike;
 			res.data.item.isLiked = tracksLike[0];
 
@@ -488,13 +518,24 @@ class SpotifyApi {
 			return { shuffle: state };
 		});
 	}
-	async playerPlayPause(type = "play", uris = []) {
+	async playerPlayPause(
+		type = "play",
+		{ uris = [], context_uri = "", offset = "" } = {}
+	) {
 		uris = uris.filter((e) => e);
 		const shouldUseUris = type === "play" && uris.length;
+		const shouldUseContextURI = type === "play" && !!context_uri?.trim();
+		const shouldUseOffset = type === "play" && !!offset.trim();
 
 		return this.requestWrapper(async () => {
 			const url = `me/player/${type}`;
-			const data = !shouldUseUris ? null : { uris };
+			let data = {};
+
+			if (shouldUseUris) data.uris = uris;
+			if (shouldUseContextURI) data.context_uri = context_uri;
+			if (shouldUseOffset) data.offset = offset;
+
+			data = Object.keys(data).length ? data : null;
 
 			const res = await this.userReq.put(url, data, {
 				validateStatus: function (status) {
@@ -503,6 +544,13 @@ class SpotifyApi {
 			});
 
 			return { [type]: true };
+		});
+	}
+	async getTrack(trackId) {
+		return this.requestWrapper(async () => {
+			const url = `tracks/${trackId}`;
+			const res = await this.userReq.get(url);
+			return res.data;
 		});
 	}
 }

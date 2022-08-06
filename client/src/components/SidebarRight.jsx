@@ -53,7 +53,7 @@ function SidebarRight({ feedType }) {
 
 		setIsLiking(true);
 
-		fetcher(`/api/track/like/${activeMusicId}`, {
+		fetcher(`/api/${activeMusic.type}/like/${activeMusicId}`, {
 			method: !like ? "PUT" : "DELETE",
 		})
 			.then((e) => {
