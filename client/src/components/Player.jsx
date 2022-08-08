@@ -320,7 +320,7 @@ function Player({ feedType }) {
 					updateOnDefaultChange={updateOnDefaultChange}
 				/>
 			</div>
-			<div className="flex-1 flex items-center justify-around p-1  flex-wrap gap-3">
+			<div className="flex-1 flex items-center justify-between xl:justify-around p-1  flex-wrap gap-3">
 				<div className="flex items-center w-full sm:w-auto justify-around">
 					<div>
 						<img

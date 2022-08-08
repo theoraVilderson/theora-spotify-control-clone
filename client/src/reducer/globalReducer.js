@@ -18,6 +18,7 @@ export const actionTypes = {
 	SET_TOKENS: "SET_TOKENS",
 	SET_USERINFO: "SET_USERINFO",
 	SET_PLAYLISTS: "SET_PLAYLISTS",
+	SET_PLAYLIST: "SET_PLAYLIST",
 	SET_PAUSED: "SET_PAUSED",
 	SET_LOGIN_LINK: "SET_LOGIN_LINK",
 	SET_LOGIN_CHALLANGE: "SET_LOGIN_CHALLANGE",
@@ -37,6 +38,7 @@ const reducer = (state, { type, payload } = {}) => {
 		SET_USERINFO,
 		LOG_OUT_USER,
 		SET_PLAYLISTS,
+		SET_PLAYLIST,
 		SET_ACTIVE_PLAYIST,
 		SET_ACTIVE_MUSIC,
 		SET_ACTIVE_MENU,
@@ -53,6 +55,13 @@ const reducer = (state, { type, payload } = {}) => {
 			return { ...state, loginChallange: payload };
 		case SET_USERINFO:
 			return { ...state, userInfo: payload };
+		case SET_PLAYLIST:
+			const res =
+				payload.at === "end"
+					? { ...state.playlists, ...payload.data }
+					: { ...payload.data, ...state.playlists };
+			console.log(res);
+			return { ...state, playlists: res };
 		case SET_PLAYLISTS:
 			return { ...state, playlists: payload };
 		case SET_ACTIVE_PLAYIST:

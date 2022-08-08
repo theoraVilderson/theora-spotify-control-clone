@@ -7,11 +7,12 @@ import { RiUserFollowLine } from "@react-icons/all-files/ri/RiUserFollowLine";
 import { GoCheck } from "@react-icons/all-files/go/GoCheck";
 import { RingCenterdLoader } from "./Loading";
 import SongItem from "./SongItem";
-
 import LinkWithBorder from "./LinkWithBorder";
 import Follow from "./Follow";
 import FeedHead from "./FeedHead";
 import FeedPlayBtn from "./FeedPlayBtn";
+import Like from "./Like";
+
 import { useParams } from "react-router-dom";
 import "./Track.css";
 function Track({ feedType }) {
@@ -22,7 +23,6 @@ function Track({ feedType }) {
 	const { trackId } = useParams();
 
 	const playerQueue = allPlayerQueue[feedType] ?? {};
-
 	const [trackLoadingDone, setTrackLoadingDone] = useState(false);
 	const [lyric, setLyric] = useState("");
 	const [track, setTrack] = useState({});
@@ -55,8 +55,6 @@ function Track({ feedType }) {
 			});
 	}, [trackId]);
 
-	// SET_PLAYER_STATE
-
 	useEffect(() => {
 		if (!track.name) return;
 
@@ -70,14 +68,14 @@ function Track({ feedType }) {
 		fetcher(`/api/track/lyrics?${query}`)
 			.then((e) => {
 				if (e.data.error) {
-					setLyric("No Lyrics Found!");
+					setLyric(null);
 					return;
 				}
 				setLyric(e.data.result);
 			})
 			.catch((e) => {
 				console.log(e);
-				setLyric("No Lyrics Found!");
+				setLyric(null);
 				// alert("sorry couldn't get Seggestions");
 			})
 			.finally(() => {
@@ -120,7 +118,7 @@ function Track({ feedType }) {
 				<div className="flex flex-col gap-2">
 					<h1
 						title={track?.name}
-						className="md:text-5xl text-lg font-bold activeColor max-w-[350px] md:truncate min-h-[4rem]"
+						className="md:text-5xl text-lg font-bold activeColor  min-h-[4rem]"
 					>
 						<LinkWithBorder to={`/track/${track?.id}`}>
 							{track?.name}
@@ -148,13 +146,22 @@ function Track({ feedType }) {
 						</span>
 					</div>
 				</div>
-				<div className="flex gap-5 self-end lg:self-auto">
+				<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
 					<FeedPlayBtn />
+					<div className="scale-150 cursor-pointer">
+						<Like item={track} feedType={feedType} />
+					</div>
 				</div>
 			</FeedHead>
 
 			<div className="track__lyric flex flex-col whitespace-pre p-5">
-				<ArrangeLyrics text={lyric} />
+				{lyric != null ? (
+					<ArrangeLyrics text={lyric} />
+				) : (
+					<h1 className="flex justify-center items-center">
+						No Lyrics Found !
+					</h1>
+				)}
 			</div>
 			<RingCenterdLoader
 				isLoaded={trackLoadingDone && lyricsLoadingIsDone}

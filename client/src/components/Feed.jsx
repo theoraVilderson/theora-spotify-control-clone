@@ -7,7 +7,7 @@ import Suggestion from "./Suggestion";
 import PlayList from "./PlayList";
 import Album from "./Album";
 import Track from "./Track";
-import Artist from "./Artist";
+import ArtistRouter from "./ArtistRouter";
 import SidebarRight from "./SidebarRight";
 import User from "./User";
 import Show from "./Show";
@@ -19,7 +19,7 @@ function Feed({ feedType = "Suggestion" }) {
 		Playlist: PlayList,
 		Album: Album,
 		Track: Track,
-		Artist: Artist,
+		Artist: ArtistRouter,
 		User: User,
 		Show: Show,
 		Episode: Episode,

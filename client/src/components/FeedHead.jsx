@@ -24,7 +24,7 @@ function FeedHead({ feedType = "Suggestion", backgroundImg, children }) {
 					</div>
 					<BsThreeDots className="activeColorHover cursor-pointer" />
 				</div>
-				<div className="flex lg:justify-between gap-2 lg:items-center flex-col lg:flex-row">
+				<div className="flex lg:justify-between gap-2 lg:items-center flex-col lg:flex-row flex-wrap">
 					{children}
 				</div>
 			</div>

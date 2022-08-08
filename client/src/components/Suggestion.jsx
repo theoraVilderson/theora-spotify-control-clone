@@ -35,7 +35,7 @@ function Suggestion({ feedType }) {
 	const [loadingPlaylistDone, setLoadingPlaylistDone] = useState(false);
 
 	useEffect(() => {
-		if (activeMusic == null && !Object.keys(suggestions).length) return;
+		if (!activeMusicId) return;
 		setLoadingPlaylistDone(false);
 		fetcher("/api/suggestions")
 			.then((e) => {
@@ -49,11 +49,11 @@ function Suggestion({ feedType }) {
 					e[k.id].orderId = key;
 					return e;
 				}, {});
+				setSuggestions(e.data.result);
 				dispatch({
 					type: actionTypes.SET_PLAYER_QUEUE,
 					payload: { name: feedType, data: res },
 				});
-				setSuggestions(e.data.result);
 			})
 			.catch((e) => {
 				console.log(e);
@@ -76,7 +76,7 @@ function Suggestion({ feedType }) {
 				<div className="flex flex-col gap-2">
 					<h1
 						title={suggestions?.targetArtist?.name}
-						className="text-5xl font-bold activeColor max-w-[350px] truncate min-h-[4rem]"
+						className="md:text-5xl text-lg font-bold activeColor  min-h-[4rem]"
 					>
 						<LinkWithBorder
 							to={`/artist/${suggestions?.targetArtist?.id}`}
@@ -92,7 +92,7 @@ function Suggestion({ feedType }) {
 						Fallowers{" "}
 					</div>
 				</div>
-				<div className="flex gap-5 self-end lg:self-auto">
+				<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
 					<FeedPlayBtn />
 
 					<Follow

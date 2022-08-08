@@ -10,6 +10,8 @@ import { actionTypes } from "../reducer/globalReducer";
 import useFetcher from "../hooks/fetcher";
 import { useEffect, useState } from "react";
 import "./SidebarRight.css";
+import Like from "./Like";
+
 export function SidebarRightItem({ children }) {
 	return (
 		<div className="flex flex-col justify-center items-center py-3 gap-1 text-xl cursor-pointer activeColor">
@@ -30,7 +32,6 @@ function SidebarRight({ feedType }) {
 
 	const playerQueue = allPlayerQueue[feedType];
 
-	// playerQueue[]
 	const isFree =
 		["free", "open"].includes(userInfo?.product) ||
 		userInfo?.product == null;
@@ -48,36 +49,6 @@ function SidebarRight({ feedType }) {
 		setLike(isLiked);
 	}, [isLiked, activeMusicId]);
 
-	const onHitLike = () => {
-		if (isLiking || !activeMusicId) return;
-
-		setIsLiking(true);
-
-		fetcher(`/api/${activeMusic.type}/like/${activeMusicId}`, {
-			method: !like ? "PUT" : "DELETE",
-		})
-			.then((e) => {
-				if (e.data.error) {
-					return;
-				}
-
-				dispatch({
-					type: actionTypes.SET_ACTIVE_MUSIC,
-					payload: {
-						...activeMusic,
-						isLiked: !like,
-					},
-				});
-				setLike(!like);
-			})
-			.catch((e) => {
-				console.log(e);
-				alert(`sorry couldn't ${like ? "unLike" : "like"}`);
-			})
-			.finally(() => {
-				setIsLiking(false);
-			});
-	};
 	return (
 		<aside className="sidebarRight sticky top-0 justify-between py-5 items-center flex-col min-w-[50px] w-2/5 hidden md:flex  max-w-[100px] md:w-2/12 min-h-[500px] h-screen">
 			<div className="flex flex-col justify-center items-center">
@@ -92,16 +63,7 @@ function SidebarRight({ feedType }) {
 				</SidebarRightItem>
 				{!activeMusicId ? null : (
 					<SidebarRightItem>
-						<span
-							onClick={onHitLike}
-							className={` ${isLiking ? "animate-spin" : ""}`}
-						>
-							{!like ? (
-								<FaRegHeart className="selectedColor hover:scale-110" />
-							) : (
-								<IoMdHeart className="selectedColor hover:scale-90" />
-							)}
-						</span>
+						<Like item={activeMusic} feedType={feedType} />
 					</SidebarRightItem>
 				)}
 			</div>

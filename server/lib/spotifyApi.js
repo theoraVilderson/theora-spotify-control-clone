@@ -62,11 +62,18 @@ class SpotifyApi {
 	}
 	handleGlobalErrors(e) {
 		let error = {};
-		if (e?.response?.data?.error?.status == "401") {
+		if (
+			e?.response?.data?.error?.status == "401" ||
+			e.error === "TOKEN_IS_NOT_VALID"
+		) {
 			error = { error: "TOKEN_IS_NOT_VALID" };
-		} else if (e?.response?.data?.error?.status == "429") {
+		} else if (
+			e?.response?.data?.error?.status == "429" ||
+			e.error === "HAS_EXCEEDED_RATE_LIMITS"
+		) {
 			error = { error: "HAS_EXCEEDED_RATE_LIMITS" };
 		}
+		console.trace(e?.response?.data?.error ?? e);
 
 		return error;
 	}
@@ -75,7 +82,6 @@ class SpotifyApi {
 		try {
 			res = await func.bind(this)();
 		} catch (e) {
-			console.trace(e?.response?.data?.error ?? e);
 			return this.handleGlobalErrors(e);
 		}
 
@@ -106,6 +112,28 @@ class SpotifyApi {
 			return (await this.userReq.get("/me")).data;
 		});
 	}
+	async getUser(userId) {
+		return await this.requestWrapper(async () => {
+			const me = await this.getMe();
+			if (me.error) throw me;
+
+			const user = await this.userReq.get(`/users/${userId}`);
+
+			const isSameUser = me.id === user.data.id;
+
+			if (!isSameUser) {
+				const isFollowed = await this.isTargetFollowed(
+					user.data.id,
+					"user"
+				);
+				if (isFollowed.error) throw isFollowed;
+				user.data.isFollowed = isFollowed[0];
+			}
+
+			return isSameUser ? me : user.data;
+		});
+	}
+
 	async getUserTokens(code) {
 		return await this.requestWrapper(async () => {
 			const data = {
@@ -146,12 +174,36 @@ class SpotifyApi {
 			};
 		});
 	}
-	async getPlayLists(userId, offset = 0, limit = 20) {
+	async getPlayLists(userId, offset = 0, limit = 20, checkLike = false) {
 		return this.requestWrapper(async () => {
 			const data = { offset, limit };
 			const query = querystring.stringify(data);
 			const url = `users/${userId}/playlists?${query}`;
 			const res = await this.userReq.get(url);
+
+			const allPlaylistsId = res.data.items.map((e) => e.id);
+
+			const currentUser = await this.getMe();
+			if (currentUser.error) return currentUser;
+
+			if (!checkLike) return res.data;
+
+			for (const playlistCount in allPlaylistsId) {
+				const playlistId = allPlaylistsId[playlistCount];
+
+				const playListFollows = await this.isTargetFollowed(
+					playlistId,
+					"playlist",
+					currentUser.id
+				);
+				if (playListFollows.error) throw playListFollows;
+
+				res.data.items[playlistCount] = {
+					...res.data.items[playlistCount],
+					isFollowed: playListFollows[0],
+				};
+			}
+
 			return res.data;
 		});
 	}
@@ -303,6 +355,82 @@ class SpotifyApi {
 		return this.requestWrapper(async () => {
 			const url = `artists/${artistId}`;
 			const res = await this.userReq.get(url);
+			const isFollowed = await this.isTargetFollowed(artistId, "artist");
+			if (isFollowed.error) throw isFollowed;
+			res.data = {
+				...res.data,
+				isFollowed: isFollowed[0],
+			};
+
+			return res.data;
+		});
+	}
+	async getArtistTopTracks(artistId, country = "us") {
+		return this.requestWrapper(async () => {
+			const url = `artists/${artistId}/top-tracks/?country=${country}`;
+			const res = await this.userReq.get(url);
+
+			const allTracksId = res.data.tracks.map((e) => e.id);
+
+			const tracksLike = await this.isLikedTarget(allTracksId, "track");
+			if (tracksLike.error) throw tracksLike;
+
+			res.data.tracks = res.data.tracks.map((e, k) => {
+				return { ...e, isLiked: tracksLike[k] };
+			});
+
+			return res.data;
+		});
+	}
+	async getArtistAlbums(artistId, offset, limit) {
+		return this.requestWrapper(async () => {
+			const data = { offset, limit };
+			const query = querystring.stringify(data);
+			const url = `artists/${artistId}/albums?${query}`;
+			const res = await this.userReq.get(url);
+			const allAlbumsId = res.data.items.map((e) => e.id);
+
+			const albumsLike = await this.isLikedTarget(
+				allAlbumsId + "",
+				"album"
+			);
+			if (albumsLike.error) throw albumsLike;
+
+			res.data.items = res.data.items.map((e, k) => {
+				return { ...e, isLiked: albumsLike[k] };
+			});
+
+			return res.data;
+		});
+	}
+	async getAlbumTracks(albumId, offset, limit) {
+		return this.requestWrapper(async () => {
+			const data = { offset, limit };
+			const query = querystring.stringify(data);
+			const url = `albums/${albumId}/tracks?${query}`;
+			const res = await this.userReq.get(url);
+			const allTracksId = res.data.items.map((e) => e.id);
+			const albumTracks = await this.getTracks(
+				allTracksId,
+				offset,
+				limit
+			);
+			if (albumTracks.error) throw albumTracks;
+
+			res.data.items = albumTracks.tracks;
+			return res.data;
+		});
+	}
+	async getAlbum(albumId) {
+		return this.requestWrapper(async () => {
+			const url = `albums/${albumId}`;
+			const res = await this.userReq.get(url);
+
+			const tracksLike = await this.isLikedTarget(res.data.id, "album");
+
+			if (tracksLike.error) throw tracksLike;
+			res.data.isLiked = tracksLike[0];
+
 			return res.data;
 		});
 	}
@@ -548,8 +676,104 @@ class SpotifyApi {
 	}
 	async getTrack(trackId) {
 		return this.requestWrapper(async () => {
-			const url = `tracks/${trackId}`;
+			const res = await this.getTracks(trackId);
+			if (res.error) throw res;
+			return res.data.tracks[0];
+		});
+	}
+
+	async getTracks(trackIds) {
+		return this.requestWrapper(async () => {
+			const data = { ids: trackIds + "" };
+			const query = querystring.stringify(data);
+			const url = `tracks?${query}`;
 			const res = await this.userReq.get(url);
+
+			const allTracksId = res.data.tracks.map((e) => e.id);
+
+			const tracksLike = await this.isLikedTarget(allTracksId, "track");
+			if (tracksLike.error) throw tracksLike;
+
+			res.data.tracks = res.data.tracks.map((e, k) => {
+				return { ...e, isLiked: tracksLike[k] };
+			});
+
+			return res.data;
+		});
+	}
+	async getEpisode(episodeId) {
+		return this.requestWrapper(async () => {
+			const res = await this.getEpisodes(episodeId);
+			if (res.error) throw res;
+			return res.episodes[0];
+		});
+	}
+	async getEpisodes(episodeIds) {
+		return this.requestWrapper(async () => {
+			const data = { ids: episodeIds + "" };
+			const query = querystring.stringify(data);
+			const url = `episodes?${query}`;
+			const res = await this.userReq.get(url);
+
+			const allEpisodesId = res.data.episodes.map((e) => e.id);
+
+			const episodesLike = await this.isLikedTarget(
+				allEpisodesId,
+				"episode"
+			);
+			if (episodesLike.error) throw episodesLike;
+
+			res.data.episodes = res.data.episodes.map((e, k) => {
+				return { ...e, isLiked: episodesLike[k] };
+			});
+			return res.data;
+		});
+	}
+
+	async getShow(showId) {
+		return this.requestWrapper(async () => {
+			const res = await this.getShows(showId);
+			if (res.error) throw res;
+			return res.shows[0];
+		});
+	}
+
+	async getShows(showIds) {
+		return this.requestWrapper(async () => {
+			const data = { ids: showIds + "" };
+			const query = querystring.stringify(data);
+			const url = `shows?${query}`;
+			const res = await this.userReq.get(url);
+
+			const allShowsId = res.data.shows.map((e) => e.id);
+
+			const showsLike = await this.isLikedTarget(allShowsId, "show");
+			if (showsLike.error) throw showsLike;
+
+			res.data.shows = res.data.shows.map((e, k) => {
+				return { ...e, isLiked: showsLike[k] };
+			});
+			return res.data;
+		});
+	}
+	async getShowEpisodes(showId, offset = 0, limit = 10) {
+		return this.requestWrapper(async () => {
+			const data = { offset, limit };
+			const query = querystring.stringify(data);
+			const url = `shows/${showId}/episodes?${query}`;
+			const res = await this.userReq.get(url);
+			const allEpisodesId = res.data.items.map((e) => e.id);
+
+			const episodesLike = await this.isLikedTarget(
+				allEpisodesId + "",
+				"episode"
+			);
+			if (episodesLike.error) throw episodesLike;
+
+			res.data.items = res.data.items.map((e, k) => {
+				return { ...e, isLiked: episodesLike[k] };
+			});
+
 			return res.data;
 		});
 	}

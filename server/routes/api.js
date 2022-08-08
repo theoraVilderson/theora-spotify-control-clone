@@ -4,24 +4,26 @@ const lyricsFinder = require("lyrics-finder");
 // check if user live
 
 async function isUserLive(req) {
-	let res = null;
+	let res = true;
 	try {
-		res = await req.spotifyApi.getMe();
+		const er = await req.spotifyApi.getMe();
+		if (er.error) throw er.error;
 	} catch (e) {
-		res = e;
+		res = false;
 	}
-	console.log("isUserLive", res);
-	return true;
+	return res;
 }
 
 function reviveUser(req, accessToken, refreshToken) {}
 function globalErrorHandler(defaultError, data) {
-	if (!Object.keys(data).length)
+	if (!Object.keys(data).length) {
+		console.log({ defaultError }, data);
 		return {
 			status: true,
 			data: { error: defaultError },
 		};
-	else if (data.error) {
+	} else if (data.error) {
+		console.log({ defaultError }, data);
 		return {
 			status: true,
 			data: { error: data.error },
@@ -30,7 +32,7 @@ function globalErrorHandler(defaultError, data) {
 	return null;
 }
 function isUserLoggedIn(req) {
-	return !!req.cookies.accessToken;
+	return req.cookies.accessToken && isUserLive(req);
 }
 
 router.get("/loginUrl", (req, res) => {
@@ -92,27 +94,6 @@ router.get("/updateTokens", async (req, res) => {
 
 	return res.json({ status: true, data: { result: userTokens } });
 });
-
-// if routes that need tokens
-router.use("*", (req, res, next) => {
-	if (!req.cookies.accessToken)
-		return res.json({ status: true, data: { error: "INVALID_TOKEN" } });
-
-	req.spotifyApi.setToken(req.cookies.accessToken);
-
-	return next();
-});
-
-router.get("/user", async (req, res) => {
-	const userInfo = await req.spotifyApi.getMe();
-	const error = globalErrorHandler("COULD_NOT_GET_USER_INFO", userInfo);
-
-	if (error) {
-		return res.json(error);
-	}
-
-	return res.json({ status: true, data: { result: userInfo } });
-});
 router.get("/logout", (req, res) => {
 	const { spotify } = req.query;
 
@@ -125,6 +106,74 @@ router.get("/logout", (req, res) => {
 	}
 	return res.json({ status: true, data: { result: "USER_LOGGED_OUT" } });
 });
+
+// if routes that need tokens
+router.use("*", (req, res, next) => {
+	if (!req.cookies.accessToken)
+		return res.json({
+			status: true,
+			data: { error: "TOKEN_IS_NOT_VALID" },
+		});
+
+	req.spotifyApi.setToken(req.cookies.accessToken);
+
+	return next();
+});
+
+// user
+router.get("/user", async (req, res) => {
+	const userInfo = await req.spotifyApi.getMe();
+	const error = globalErrorHandler("COULD_NOT_GET_USER_INFO", userInfo);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: userInfo } });
+});
+
+router.get("/user/:userId", async (req, res) => {
+	const { userId } = req.params;
+
+	const userInfo = await req.spotifyApi.getUser(userId);
+	const error = globalErrorHandler(
+		"COULD_NOT_GET_TARGET_USER_INFO",
+		userInfo
+	);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: userInfo } });
+});
+
+router
+	.route("/user/:userId/follow")
+	.put(async (req, res) => {
+		const { userId } = req.params;
+
+		const follow = await req.spotifyApi.follow(userId, "user");
+		const error = globalErrorHandler("COULD_NOT_FOLLOW_USER", follow);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: follow } });
+	})
+	.delete(async (req, res) => {
+		const { userId } = req.params;
+
+		const unFollow = await req.spotifyApi.unFollow(userId, "user");
+		const error = globalErrorHandler("COULD_NOT_UNSAVE_USER", unFollow);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: unFollow } });
+	});
 
 router.get("/suggestions", async (req, res) => {
 	const suggestions = await req.spotifyApi.getSuggestions();
@@ -139,7 +188,7 @@ router.get("/suggestions", async (req, res) => {
 
 // PlayList Route
 router.get("/playlists", async (req, res) => {
-	let { userId, offset = 0, limit = 20 } = req.query;
+	let { userId, offset = 0, limit = 20, checkLike = false } = req.query;
 
 	if (!userId) return res.json(globalErrorHandler("please pass userId", {}));
 
@@ -147,8 +196,14 @@ router.get("/playlists", async (req, res) => {
 	limit = parseInt(limit);
 	offset = isNaN(offset) || offset >= 100000 || offset < 0 ? 0 : offset;
 	limit = isNaN(limit) || limit >= 50 || limit < 0 ? 20 : limit;
+	checkLike = !(!checkLike || checkLike === "false");
 
-	const userInfo = await req.spotifyApi.getPlayLists(userId, offset, limit);
+	const userInfo = await req.spotifyApi.getPlayLists(
+		userId,
+		offset,
+		limit,
+		checkLike
+	);
 	const error = globalErrorHandler("COULD_NOT_GET_USER_PLAYLISTS", userInfo);
 
 	if (error) {
@@ -209,7 +264,7 @@ router.get("/playlistFullInfo/:playlistId", async (req, res) => {
 	return res.json({ status: true, data: { result: playlistFullInfo } });
 });
 router
-	.route("/playlist/follow/:playlistId")
+	.route("/playlist/:playlistId/follow")
 	.put(async (req, res) => {
 		const { playlistId } = req.params;
 
@@ -237,7 +292,7 @@ router
 
 // Artist Route
 router
-	.route("/artist/follow/:artistId")
+	.route("/artist/:artistId/follow")
 	.put(async (req, res) => {
 		const { artistId } = req.params;
 
@@ -262,10 +317,60 @@ router
 
 		return res.json({ status: true, data: { result: unFollow } });
 	});
+router.get("/artist/:artistId", async (req, res) => {
+	const { artistId } = req.params;
+
+	const artist = await req.spotifyApi.getArtist(artistId);
+	const error = globalErrorHandler("COULD_NOT_GET_ARTIST", artist);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: artist } });
+});
+router.get("/artist/:artistId/top-tracks", async (req, res) => {
+	const { artistId } = req.params;
+	const { country = "us" } = req.query;
+
+	const topTracks = await req.spotifyApi.getArtistTopTracks(
+		artistId,
+		country
+	);
+	const error = globalErrorHandler("COULD_NOT_GET_TOP_TRACKS", topTracks);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: topTracks } });
+});
+router.get("/artist/:artistId/albums", async (req, res) => {
+	const { artistId } = req.params;
+
+	let { offset = 0, limit = 10 } = req.query;
+	offset = parseInt(offset);
+	limit = parseInt(limit);
+	offset = isNaN(offset) || offset >= 100000 || offset < 0 ? 0 : offset;
+	limit = isNaN(limit) || limit >= 50 || limit < 0 ? 20 : limit;
+
+	const albums = await req.spotifyApi.getArtistAlbums(
+		artistId,
+		offset,
+		limit
+	);
+	const error = globalErrorHandler("COULD_NOT_GET_ARTIST_ALBUMS", albums);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: albums } });
+});
 // Album Route
 
 router
-	.route("/album/like/:albumId")
+	.route("/album/:albumId/like")
 	.get(async (req, res) => {
 		const { albumId } = req.params;
 
@@ -302,10 +407,43 @@ router
 
 		return res.json({ status: true, data: { result: unLike } });
 	});
+router.get("/album/:albumId/getAlbumTracks", async (req, res) => {
+	const { albumId } = req.params;
+
+	let { offset = 0, limit = 10 } = req.query;
+	offset = parseInt(offset);
+	limit = parseInt(limit);
+	offset = isNaN(offset) || offset >= 100000 || offset < 0 ? 0 : offset;
+	limit = isNaN(limit) || limit >= 50 || limit < 0 ? 20 : limit;
+
+	const album = await req.spotifyApi.getAlbumTracks(albumId, offset, limit);
+	const error = globalErrorHandler("COULD_NOT_GET_ALBUM_TRACKS", album);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: album } });
+});
+
+router.get("/album/:albumId", async (req, res) => {
+	const { albumId } = req.params;
+
+	console.log(albumId);
+
+	const album = await req.spotifyApi.getAlbum(albumId);
+	const error = globalErrorHandler("COULD_NOT_GET_ALBUM", album);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: album } });
+});
 
 // Track Route
 router
-	.route("/track/like/:trackId")
+	.route("/track/:trackId/like")
 	.get(async (req, res) => {
 		const { trackId } = req.params;
 
@@ -371,7 +509,7 @@ router.get("/track/:trackId", async (req, res) => {
 
 // Episode Route
 router
-	.route("/episode/like/:episodeId")
+	.route("/episode/:episodeId/like")
 	.get(async (req, res) => {
 		const { episodeId } = req.params;
 
@@ -411,6 +549,96 @@ router
 
 		return res.json({ status: true, data: { result: unLike } });
 	});
+
+router.get("/episode/:episodeId", async (req, res) => {
+	const { episodeId } = req.params;
+
+	const episode = await req.spotifyApi.getEpisode(episodeId);
+	const error = globalErrorHandler("COULD_NOT_GET_EPISODE", episode);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: episode } });
+});
+
+// Shows Route
+router
+	.route("/show/:showId/like")
+	.get(async (req, res) => {
+		const { showId } = req.params;
+
+		const isLiked = await req.spotifyApi.isLikedTarget(showId, "show");
+		const error = globalErrorHandler("COULD_NOT_CHECK_LIKE", isLiked);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: isLiked } });
+	})
+	.put(async (req, res) => {
+		const { showId } = req.params;
+
+		const like = await req.spotifyApi.likeTarget(showId, "show");
+		const error = globalErrorHandler("COULD_NOT_LIKE", like);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: like } });
+	})
+	.delete(async (req, res) => {
+		const { showId } = req.params;
+
+		const unLike = await req.spotifyApi.unLikeTarget(showId, "show");
+		const error = globalErrorHandler("COULD_NOT_UNLIKE", unLike);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: unLike } });
+	});
+
+router.get("/show/:showId", async (req, res) => {
+	const { showId } = req.params;
+	let { offset = 0, limit = 10 } = req.query;
+
+	const show = await req.spotifyApi.getShow(showId);
+	const error = globalErrorHandler("COULD_NOT_GET_SHOW", show);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: show } });
+});
+
+router.get("/show/:showId/episodes", async (req, res) => {
+	const { showId } = req.params;
+	let { offset = 0, limit = 10 } = req.query;
+	offset = parseInt(offset);
+	limit = parseInt(limit);
+	offset = isNaN(offset) || offset >= 100000 || offset < 0 ? 0 : offset;
+	limit = isNaN(limit) || limit >= 50 || limit < 0 ? 20 : limit;
+
+	const episodes = await req.spotifyApi.getShowEpisodes(
+		showId,
+		offset,
+		limit
+	);
+	const error = globalErrorHandler("COULD_NOT_GET_SHOW_EPISODES", episodes);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: episodes } });
+});
+
 // Player Route
 
 router.get("/player/currently-playing", async (req, res) => {
@@ -418,7 +646,6 @@ router.get("/player/currently-playing", async (req, res) => {
 	const currentlyPlaying = await req.spotifyApi.getCurrentlyPlaying(
 		additional_types
 	);
-	console.log({ currentlyPlaying });
 	const error = globalErrorHandler(
 		"COULD_NOT_GET_CURRENTLY_PLAYING",
 		currentlyPlaying

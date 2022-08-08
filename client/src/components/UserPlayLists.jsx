@@ -24,6 +24,7 @@ function UserPlayLists() {
 	const [nextPlaylistItemsLink, setNextPlaylistItemsLink] = useState(null);
 
 	const [totalPlaylist, setTotalPlaylist] = useState("");
+	const [currentTotalPlaylist, setCurrentTotalPlaylist] = useState(0);
 
 	const [loadingPlaylistDone, setLoadingPlaylistDone] = useState(true);
 
@@ -46,6 +47,7 @@ function UserPlayLists() {
 		dispatch({ type: actionTypes.SET_PLAYLISTS, payload: lastRes });
 		setNextPlaylistItemsLink(e.data.result.next);
 		setTotalPlaylist(e.data.result.total);
+		setCurrentTotalPlaylist(Object.keys(lastRes).length);
 	};
 	const loadMorePlayListItems = ({ forceToRestart = false } = {}) => {
 		if (!userInfo?.id) return;
@@ -98,7 +100,16 @@ function UserPlayLists() {
 		if (!userInfo?.id) return;
 		// use forceToRestart to just update the infos like totalPlayList number
 		loadMorePlayListItems({ forceToRestart: true });
-	}, [userInfo, playlists]);
+	}, [userInfo]);
+	useEffect(() => {
+		if (!userInfo?.id) return;
+
+		const playlistLen = Object.values(playlists).filter((e) => e).length;
+		setTotalPlaylist(totalPlaylist + playlistLen - currentTotalPlaylist);
+		setCurrentTotalPlaylist(playlistLen);
+		// // use forceToRestart to just update the infos like totalPlayList number
+		// loadMorePlayListItems({ forceToRestart: true });
+	}, [playlists]);
 
 	return (
 		<div className="sidebar__playLists mb-2 flex-1 flex flex-col justify-center ">

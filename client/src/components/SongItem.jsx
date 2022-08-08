@@ -4,17 +4,25 @@ import useFetcher from "../hooks/fetcher";
 import { FaRegHeart } from "@react-icons/all-files/fa/FaRegHeart";
 import { IoMdHeart } from "@react-icons/all-files/io/IoMdHeart";
 import { MdExplicit } from "@react-icons/all-files/md/MdExplicit";
+import { BsMusicNoteList } from "@react-icons/all-files/bs/BsMusicNoteList";
 
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import "./SongItem.css";
+import Like from "./Like";
+import Follow from "./Follow";
+import LinkWithBorder from "./LinkWithBorder";
+
+import { FaLock } from "@react-icons/all-files/fa/FaLock";
+import { FaUnlock } from "@react-icons/all-files/fa/FaUnlock";
+import { GoCheck } from "@react-icons/all-files/go/GoCheck";
+
 function SongItem({ songInfo, numberId, feedType }) {
 	const [globalData, dispatch] = useGlobalContext();
 	const { userInfo, activeMusic } = globalData;
 
-	const [{ name, artists, id, duration_ms, isLiked, explicit }, setSongData] =
-		useState(songInfo);
-
+	const [songData, setSongData] = useState(songInfo);
+	const { name, artists, id, duration_ms, isLiked, explicit } = songData;
 	useEffect(() => {
 		if (activeMusic.id === id) {
 			setSongData(activeMusic);
@@ -24,6 +32,8 @@ function SongItem({ songInfo, numberId, feedType }) {
 	const fetcher = useFetcher([globalData, dispatch]);
 
 	const images = songInfo?.album?.images ?? songInfo?.images;
+
+	const isPlaylistTypetype = songData.type == "playlist";
 
 	const backgroundImg = useMemo(() => {
 		const targetImage = images?.reduce?.((e, n) => {
@@ -144,15 +154,12 @@ function SongItem({ songInfo, numberId, feedType }) {
 								<span key={k}>
 									{(k && ",") || null}
 
-									<Link
-										key={k}
+									<LinkWithBorder
 										to={`/artist/${e.id}`}
-										className={`border-b break-all hover:border-current border-solid border-transparent ${
-											(k && "mx-1") || "mr-1"
-										} `}
+										isNeedSpace={!!k}
 									>
 										{e.name}
-									</Link>
+									</LinkWithBorder>
 								</span>
 							);
 						})}
@@ -166,27 +173,50 @@ function SongItem({ songInfo, numberId, feedType }) {
 								</Link>
 							</span>
 						)}
+						{songInfo.type !==
+						"episode" ? null : !songInfo?.description?.trim?.() ? (
+							<span>{songInfo.release_date}</span>
+						) : (
+							<span key={songInfo.id}>
+								{songInfo.description}
+							</span>
+						)}
 					</div>
 				</div>
 			</div>
 			<div className="flex w-full sm:w-auto justify-between sm:justify-scratch items-center gap-4 p-5">
-				<div className="like">
-					<span
-						onClick={onHitLike}
-						className={`${
-							!like && !isLiking
-								? "inline-block sm:hidden group-hover:inline-block"
-								: "inline-block"
-						}  ${isLiking ? "animate-spin" : ""}`}
-					>
-						{!like ? (
-							<FaRegHeart className="selectedColor hover:scale-110" />
-						) : (
-							<IoMdHeart className="selectedColor hover:scale-90" />
-						)}
-					</span>
+				{isPlaylistTypetype ? (
+					<Follow
+						target={songData}
+						FollowContent={<>Follow</>}
+						UnFollowContent={
+							<>
+								<GoCheck
+									className="w-4 h-4 float-left"
+									style={{
+										color: "var(--text-base)",
+									}}
+								/>
+								Following
+							</>
+						}
+					/>
+				) : (
+					<Like item={songData} feedType={feedType} hover />
+				)}
+
+				<div>
+					{songData?.total_tracks ? (
+						<div className="flex items-center gap-1">
+							{" "}
+							<BsMusicNoteList /> {songData?.total_tracks}
+						</div>
+					) : isPlaylistTypetype ? (
+						<div>{songData.public ? <FaUnlock /> : <FaLock />}</div>
+					) : (
+						durationCalced
+					)}
 				</div>
-				<div>{durationCalced}</div>
 			</div>
 		</div>
 	);

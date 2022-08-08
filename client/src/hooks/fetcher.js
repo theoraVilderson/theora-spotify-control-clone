@@ -18,7 +18,11 @@ export default function useFetcher([, dispatch] = []) {
 		return fetch(...args)
 			.then((e) => e.json())
 			.then(async (e) => {
-				if (e.data.error === "TOKEN_IS_NOT_VALID") {
+				if (
+					["TOKEN_IS_NOT_VALID", "INVALID_TOKEN"].includes(
+						e.data.error
+					)
+				) {
 					tries--;
 					if (tries <= 0) {
 						tries = 3;

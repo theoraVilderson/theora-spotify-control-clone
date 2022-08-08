@@ -16,7 +16,6 @@ import useFetcher from "./hooks/fetcher";
 function App() {
   const [loadingDone, setLoadingDone] = useState(false);
   const [globalData, dispatch] = useGlobalContext();
-  console.log(globalData);
   const {
     tokens: { accessToken },
   } = globalData;
@@ -55,6 +54,10 @@ function App() {
     }
   }, [accessToken]);
 
+  useEffect(() => {
+    console.log(globalData);
+  }, [globalData]);
+
   const Page = accessToken ? Home : Login;
 
   return (
@@ -79,6 +82,10 @@ function App() {
             />
             <Route
               path="/artist/:artistId"
+              element={<Page feedType={"Artist"} />}
+            />
+            <Route
+              path="/artist/:artistId/:subMenuName"
               element={<Page feedType={"Artist"} />}
             />
             <Route path="/user/:userId" element={<Page feedType={"User"} />} />
