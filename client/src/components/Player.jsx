@@ -66,7 +66,6 @@ function Player({ feedType }) {
 				});
 			})
 			.catch((e) => {
-				console.log(e);
 				// alert(`sorry couldn't get currently-playing`);
 			})
 			.finally(() => {});

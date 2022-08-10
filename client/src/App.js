@@ -69,6 +69,22 @@ function App() {
           <Routes>
             <Route path={"/callback"} element={<AfterLogin />} />
             <Route
+              path={"/LikedArtists"}
+              element={<Page feedType={"LikedArtists"} />}
+            />
+            <Route
+              path={"/LikedAlbums"}
+              element={<Page feedType={"LikedAlbums"} />}
+            />
+            <Route
+              path={"/LikedPodcasts"}
+              element={<Page feedType={"LikedPodcasts"} />}
+            />
+            <Route
+              path={"/LikedSongs"}
+              element={<Page feedType={"LikedSongs"} />}
+            />
+            <Route
               path="/playlist/:playlistId"
               element={<Page feedType={"Playlist"} />}
             />

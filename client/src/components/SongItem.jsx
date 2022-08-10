@@ -24,7 +24,7 @@ function SongItem({ songInfo, numberId, feedType }) {
 	const [songData, setSongData] = useState(songInfo);
 	const { name, artists, id, duration_ms, isLiked, explicit } = songData;
 	useEffect(() => {
-		if (activeMusic.id === id) {
+		if (activeMusic?.id === id) {
 			setSongData(activeMusic);
 		}
 	}, [songInfo, activeMusic]);
@@ -33,12 +33,15 @@ function SongItem({ songInfo, numberId, feedType }) {
 
 	const images = songInfo?.album?.images ?? songInfo?.images;
 
-	const isPlaylistTypetype = songData.type == "playlist";
+	const isPlaylistType = songData.type == "playlist";
+	const isFollowable = songData.isFollowed != null;
 
 	const backgroundImg = useMemo(() => {
 		const targetImage = images?.reduce?.((e, n) => {
+			e.width = e.width ?? 0;
+			e.height = e.height ?? 0;
 			return e.width + e.height <= n.width + n.height ? n : e;
-		});
+		}, {});
 		return targetImage?.url;
 	}, [images]);
 
@@ -185,7 +188,7 @@ function SongItem({ songInfo, numberId, feedType }) {
 				</div>
 			</div>
 			<div className="flex w-full sm:w-auto justify-between sm:justify-scratch items-center gap-4 p-5">
-				{isPlaylistTypetype ? (
+				{isFollowable ? (
 					<Follow
 						target={songData}
 						FollowContent={<>Follow</>}
@@ -209,12 +212,17 @@ function SongItem({ songInfo, numberId, feedType }) {
 					{songData?.total_tracks ? (
 						<div className="flex items-center gap-1">
 							{" "}
-							<BsMusicNoteList /> {songData?.total_tracks}
+							<BsMusicNoteList />
+							<div className="min-w-[30px] text-center">
+								{songData?.total_tracks}
+							</div>
 						</div>
-					) : isPlaylistTypetype ? (
+					) : isPlaylistType ? (
 						<div>{songData.public ? <FaUnlock /> : <FaLock />}</div>
-					) : (
+					) : duration_ms ? (
 						durationCalced
+					) : (
+						""
 					)}
 				</div>
 			</div>

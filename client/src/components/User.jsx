@@ -26,12 +26,12 @@ function User({ feedType }) {
 	const [userPlaylistLoading, setUserPlaylistLoading] = useState(false);
 
 	const backgroundImg = useMemo(() => {
-		const targetImage = user.images?.reduce?.((e, n) => {
+		const targetImage = user?.images?.reduce?.((e, n) => {
 			e.width = e.width ?? 0;
 			e.height = e.height ?? 0;
 
 			return e.width + e.height <= n.width + n.height ? n : e;
-		});
+		}, {});
 		return targetImage?.url;
 	}, [user]);
 

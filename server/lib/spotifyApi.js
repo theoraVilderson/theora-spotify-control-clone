@@ -678,7 +678,7 @@ class SpotifyApi {
 		return this.requestWrapper(async () => {
 			const res = await this.getTracks(trackId);
 			if (res.error) throw res;
-			return res.data.tracks[0];
+			return res.tracks[0];
 		});
 	}
 
@@ -689,6 +689,7 @@ class SpotifyApi {
 			const url = `tracks?${query}`;
 			const res = await this.userReq.get(url);
 
+			console.log(res.data);
 			const allTracksId = res.data.tracks.map((e) => e.id);
 
 			const tracksLike = await this.isLikedTarget(allTracksId, "track");
@@ -696,6 +697,47 @@ class SpotifyApi {
 
 			res.data.tracks = res.data.tracks.map((e, k) => {
 				return { ...e, isLiked: tracksLike[k] };
+			});
+
+			return res.data;
+		});
+	}
+
+	async getLiked(type, offset = 0, limit = 20, after) {
+		return this.requestWrapper(async () => {
+			const data = { offset, limit };
+			if (type === "artist") {
+				data.type = type;
+			}
+			if (after) {
+				data.after = after;
+			}
+			const query = querystring.stringify(data);
+			const url = `me/${
+				type === "artist" ? "following" : type + "s"
+			}?${query}`;
+			console.log(url, type);
+			const res = await this.userReq.get(url);
+
+			if (type === "artist") {
+				res.data = res.data.artists;
+			}
+			res.data.items = res.data.items.map((e, k) => {
+				let lastRes = e;
+
+				const item = e[type];
+
+				delete lastRes[type];
+
+				lastRes = { ...lastRes, ...item };
+
+				const followedType = ["playlist", "show", "artist"].includes(
+					lastRes.type
+				)
+					? "isFollowed"
+					: "isLiked";
+
+				return { ...lastRes, [followedType]: true };
 			});
 
 			return res.data;

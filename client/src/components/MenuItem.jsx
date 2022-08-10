@@ -1,8 +1,8 @@
 import "./MenuItem.css";
 import { Link } from "react-router-dom";
-function MenuItem({ Icon, name, active }) {
+function MenuItem({ Icon, name, active, link }) {
 	return (
-		<Link to={`/${name}`}>
+		<Link to={`/${link ?? name}`}>
 			<div
 				className={`flex gap-5 text-sm  items-center py-2 cursor-pointer p-2 menuitem sidebarSpace ${
 					active ? "active" : ""

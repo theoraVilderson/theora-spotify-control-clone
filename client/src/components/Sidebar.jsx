@@ -10,6 +10,7 @@ import { BiPulse } from "@react-icons/all-files/bi/BiPulse";
 import { FaBroadcastTower } from "@react-icons/all-files/fa/FaBroadcastTower";
 import { FaMicrophoneAlt } from "@react-icons/all-files/fa/FaMicrophoneAlt";
 import { FaPodcast } from "@react-icons/all-files/fa/FaPodcast";
+import { IoMdHeart } from "@react-icons/all-files/io/IoMdHeart";
 
 import { BsFillVolumeUpFill } from "@react-icons/all-files/bs/BsFillVolumeUpFill";
 import { BsMusicNoteList } from "@react-icons/all-files/bs/BsMusicNoteList";
@@ -41,33 +42,34 @@ function Sidebar() {
 		},
 		{
 			id: 2,
-			icon: BiPulse,
-			name: "Discover",
+			icon: IoMdHeart,
+			name: "Liked Songs",
+			link: "LikedSongs",
 		},
 		{
 			id: 3,
-			icon: FaBroadcastTower,
-			name: "Radio",
+			icon: FaMicrophoneAlt,
+			name: "Liked Artists",
+			link: "LikedArtists",
 		},
 		{
 			id: 4,
-			icon: FaMicrophoneAlt,
-			name: "Artist",
+			icon: IoAlbumsOutline,
+			name: "Liked Albums",
+			link: "LikedAlbums",
 		},
 		{
 			id: 5,
-			icon: IoAlbumsOutline,
-			name: "Albums",
-		},
-		{
-			id: 6,
 			icon: FaPodcast,
-			name: "Podcasts",
+			name: "Liked Podcasts",
+			link: "LikedPodcasts",
 		},
 	];
 	const activeMenuId = useMemo(() => {
 		const path = decodeURIComponent(pathname.slice(1)).toLowerCase().trim();
-		const res = menuItems.find((e) => e.name.toLowerCase() === path);
+		const res = menuItems.find(
+			(e) => (e.link ?? e.name).toLowerCase() === path
+		);
 
 		return res?.id ?? (!path ? 1 : "");
 	}, [pathname]);
@@ -157,6 +159,7 @@ function Sidebar() {
 							key={item.id}
 							Icon={item.icon}
 							name={item.name}
+							link={item.link}
 							active={item.id === activeMenu}
 						/>
 					);

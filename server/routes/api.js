@@ -639,6 +639,35 @@ router.get("/show/:showId/episodes", async (req, res) => {
 	return res.json({ status: true, data: { result: episodes } });
 });
 
+// likedTarget
+
+router.get("/likedTarget/:type", async (req, res) => {
+	let { type } = req.params;
+
+	let { offset = 0, limit = 10, after = "" } = req.query;
+	offset = parseInt(offset);
+	limit = parseInt(limit);
+	offset = isNaN(offset) || offset >= 100000 || offset < 0 ? 0 : offset;
+	limit = isNaN(limit) || limit >= 50 || limit < 10 ? 20 : limit;
+
+	const likedTarget = await req.spotifyApi.getLiked(
+		type,
+		offset,
+		limit,
+		after
+	);
+	const error = globalErrorHandler(
+		"COULD_NOT_GET_LIKED_" + type.toUpperCase(),
+		likedTarget
+	);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: likedTarget } });
+});
+
 // Player Route
 
 router.get("/player/currently-playing", async (req, res) => {

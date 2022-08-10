@@ -117,7 +117,7 @@ function Follow({ target, FollowContent, UnFollowContent, ...restProps }) {
 
 	useEffect(() => {
 		setIsFollowed(target?.isFollowed);
-	}, [target?.isFollowed]);
+	}, [target, target?.isFollowed]);
 
 	return (
 		<button

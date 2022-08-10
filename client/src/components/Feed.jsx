@@ -12,6 +12,10 @@ import SidebarRight from "./SidebarRight";
 import User from "./User";
 import Show from "./Show";
 import Episode from "./Episode";
+import LikedSongs from "./LikedSongs";
+import LikedArtists from "./LikedArtists";
+import LikedAlbums from "./LikedAlbums";
+import LikedPodcasts from "./LikedPodcasts";
 
 function Feed({ feedType = "Suggestion" }) {
 	const FeedTypes = {
@@ -23,6 +27,10 @@ function Feed({ feedType = "Suggestion" }) {
 		User: User,
 		Show: Show,
 		Episode: Episode,
+		LikedSongs: LikedSongs,
+		LikedArtists: LikedArtists,
+		LikedAlbums: LikedAlbums,
+		LikedPodcasts: LikedPodcasts,
 	};
 
 	const [globalData, dispatch] = useGlobalContext();
