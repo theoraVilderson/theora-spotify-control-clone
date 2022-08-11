@@ -16,6 +16,7 @@ import LikedSongs from "./LikedSongs";
 import LikedArtists from "./LikedArtists";
 import LikedAlbums from "./LikedAlbums";
 import LikedPodcasts from "./LikedPodcasts";
+import Search from "./Search";
 
 function Feed({ feedType = "Suggestion" }) {
 	const FeedTypes = {
@@ -31,6 +32,7 @@ function Feed({ feedType = "Suggestion" }) {
 		LikedArtists: LikedArtists,
 		LikedAlbums: LikedAlbums,
 		LikedPodcasts: LikedPodcasts,
+		Search: Search,
 	};
 
 	const [globalData, dispatch] = useGlobalContext();

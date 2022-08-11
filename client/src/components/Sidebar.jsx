@@ -16,7 +16,7 @@ import { BsFillVolumeUpFill } from "@react-icons/all-files/bs/BsFillVolumeUpFill
 import { BsMusicNoteList } from "@react-icons/all-files/bs/BsMusicNoteList";
 import { FaDesktop } from "@react-icons/all-files/fa/FaDesktop";
 
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 import MenuItem from "./MenuItem";
 import SliderRange from "./SliderRange";
@@ -79,7 +79,8 @@ function Sidebar() {
 	}, [activeMenuId]);
 
 	const activeMusicItem = playerState?.item;
-
+	const navigate = useNavigate();
+	const [search, setSearch] = useState("");
 	const [updateOnDefaultChange, setUpdateOnDefaultChange] = useState(true);
 	const [updateOnDefaultIsDisabled, setUpdateOnDefaultIsDisabled] =
 		useState(false);
@@ -116,6 +117,17 @@ function Sidebar() {
 		[updateOnDefaultIsDisabled]
 	);
 
+	useEffect(() => {
+		if (!search) return;
+
+		const timer = setTimeout(() => {
+			navigate(`/Search?query=${encodeURIComponent(search)}`);
+		}, 500);
+		return () => {
+			clearTimeout(timer);
+		};
+	}, [search]);
+
 	return (
 		<aside className="sidebar sticky top-0 flex-col min-w-[130px] w-2/5 hidden md:flex  md:min-w-[280px] max-w-[350px] md:w-1/5 min-h-screen">
 			{/*head */}
@@ -147,6 +159,8 @@ function Sidebar() {
 					type="text"
 					className="ring-0 outline-0 border-0 bg-transparent w-9/12 activeColor"
 					placeholder="Search..."
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
 				/>
 			</div>
 			{/* Menu */}

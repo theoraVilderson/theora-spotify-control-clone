@@ -819,5 +819,39 @@ class SpotifyApi {
 			return res.data;
 		});
 	}
+	async search(
+		option = {
+			q: "best song",
+			type: "album,artist,playlist,track,show,episode",
+		}
+	) {
+		return this.requestWrapper(async () => {
+			let { q, type, limit, offset } = option;
+
+			if (!type) {
+				type = "album,artist,playlist,track,show,episode";
+			} else if (Array.isArray(type)) {
+				type = type + "";
+			}
+
+			const data = { q, type, limit, offset };
+			const query = querystring.stringify(data);
+			const url = `search?${query}`;
+			const res = await this.userReq.get(url);
+			// const allEpisodesId = res.data.items.map((e) => e.id);
+
+			// const episodesLike = await this.isLikedTarget(
+			// 	allEpisodesId + "",
+			// 	"episode"
+			// );
+			// if (episodesLike.error) throw episodesLike;
+
+			// res.data.items = res.data.items.map((e, k) => {
+			// 	return { ...e, isLiked: episodesLike[k] };
+			// });
+
+			return res.data;
+		});
+	}
 }
 module.exports = SpotifyApi;

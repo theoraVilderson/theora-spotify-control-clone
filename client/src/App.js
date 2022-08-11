@@ -68,6 +68,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path={"/callback"} element={<AfterLogin />} />
+            <Route path={"/Search"} element={<Page feedType={"Search"} />} />
             <Route
               path={"/LikedArtists"}
               element={<Page feedType={"LikedArtists"} />}

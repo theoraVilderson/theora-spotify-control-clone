@@ -62,13 +62,7 @@ function Suggestion({ feedType }) {
 			.finally(() => {
 				setLoadingPlaylistDone(true);
 			});
-	}, [activeMusicId]);
-
-	// SET_PLAYER_STATE
-
-	const [isProcessFollow, setIsProcessFollow] = useState(false);
-
-	const onHitFollow = () => {};
+	}, [activeMusicId, activeMusic]);
 
 	return (
 		<div className="suggestions">

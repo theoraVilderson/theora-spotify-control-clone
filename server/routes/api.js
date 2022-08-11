@@ -120,6 +120,24 @@ router.use("*", (req, res, next) => {
 	return next();
 });
 
+// search
+router.get("/search", async (req, res) => {
+	const {
+		offset = 0,
+		limit = 10,
+		type = "album,artist,playlist,track,show,episode",
+		q = "",
+	} = req.query;
+
+	const userInfo = await req.spotifyApi.search({ offset, limit, type, q });
+	const error = globalErrorHandler("COULD_NOT_GET_SEARCH_RESAULT", userInfo);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: userInfo } });
+});
 // user
 router.get("/user", async (req, res) => {
 	const userInfo = await req.spotifyApi.getMe();
