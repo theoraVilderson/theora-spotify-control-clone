@@ -16,6 +16,10 @@ import FeedPlayBtn from "./FeedPlayBtn";
 import Like from "./Like";
 import heartImage from "../imgs/heart.png";
 import { useParams } from "react-router-dom";
+
+import NotFound from "./NotFound";
+import { helper } from "../libs/helper";
+
 function LikedTarget({ feedType, target, targetType }) {
 	const [globalData, dispatch] = useGlobalContext();
 	const { userInfo, playerQueue: allPlayerQueue, activeMusic } = globalData;
@@ -26,9 +30,20 @@ function LikedTarget({ feedType, target, targetType }) {
 
 	const backgroundImg = heartImage;
 
+	const onErrorHandler = (e) => {
+		dispatch({
+			type: actionTypes.SET_PLAYER_QUEUE,
+			payload: {
+				name: feedType,
+				data: {
+					error: helper.apiErrorHandler(e),
+				},
+			},
+		});
+	};
 	const playListDataHandler = (e) => {
 		if (e.data.error) {
-			console.error("sorry couldn't get playlist");
+			onErrorHandler(e);
 			return;
 		}
 
@@ -65,7 +80,7 @@ function LikedTarget({ feedType, target, targetType }) {
 
 		fetcher(url)
 			.then(playListDataHandler)
-			.catch(console.error)
+			.catch(onErrorHandler)
 			.finally((e) => {
 				setLikedTargetLoading(false);
 			});
@@ -102,54 +117,73 @@ function LikedTarget({ feedType, target, targetType }) {
 	useEffect(() => {
 		if (likedTarget.items == null) loadMoreEpisodeItems();
 	}, [likedTarget]);
-
 	return (
-		<div className="track">
-			<FeedHead backgroundImg={backgroundImg} feedType={feedType}>
-				<div className="flex flex-col gap-2">
-					<h1
-						title={"LIKED " + target.toUpperCase()}
-						className="md:text-5xl text-lg font-bold activeColor "
-					>
-						<LinkWithBorder to={`/${target}/`}>
-							Liked {target.slice(5)}
-						</LinkWithBorder>
-					</h1>
+		<div className="likedTarget">
+			{likedTarget?.total != null &&
+			Object.keys(likedTarget?.items ?? {}).length ? (
+				<>
+					<FeedHead backgroundImg={backgroundImg} feedType={feedType}>
+						<div className="flex flex-col gap-2">
+							<h1
+								title={"LIKED " + target.toUpperCase()}
+								className="md:text-5xl text-lg font-bold activeColor "
+							>
+								<LinkWithBorder to={`/${target}/`}>
+									Liked {target.slice(5)}
+								</LinkWithBorder>
+							</h1>
 
-					<div className="flex gap-2 items-center"></div>
-				</div>
-				<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
-					<div className="flex gap-2 items-center">
-						<RiUserFollowLine className="activeColor" />
-						<span className="activeColor">
-							{userInfo?.display_name ? (
-								<>
-									<LinkWithBorder
-										to={`/${userInfo?.type}/${userInfo?.id}`}
-									>
-										{userInfo?.display_name}
-									</LinkWithBorder>
-								</>
-							) : null}
-						</span>
+							<div className="flex gap-2 items-center"></div>
+						</div>
+						<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
+							<div className="flex gap-2 items-center">
+								<RiUserFollowLine className="activeColor" />
+								<span className="activeColor">
+									{userInfo?.display_name ? (
+										<>
+											<LinkWithBorder
+												to={`/${userInfo?.type}/${userInfo?.id}`}
+											>
+												{userInfo?.display_name}
+											</LinkWithBorder>
+										</>
+									) : null}
+								</span>
+							</div>
+						</div>
+					</FeedHead>
+					<div className="p-3">
+						<div className="likedTarget__songs flex flex-col">
+							{likedTarget?.items &&
+								Object.values(likedTarget?.items)?.map?.(
+									(e, k) => {
+										return (
+											<SongItem
+												key={e.id}
+												numberId={k + 1}
+												songInfo={e}
+												feedType={feedType}
+											/>
+										);
+									}
+								)}
+						</div>
 					</div>
-				</div>
-			</FeedHead>
-			<div className="p-3">
-				<div className="likedTarget__songs flex flex-col">
-					{likedTarget?.items &&
-						Object.values(likedTarget?.items)?.map?.((e, k) => {
-							return (
-								<SongItem
-									key={e.id}
-									numberId={k + 1}
-									songInfo={e}
-									feedType={feedType}
-								/>
-							);
-						})}
-				</div>
-			</div>
+				</>
+			) : (
+				<NotFound
+					show={
+						likedTarget?.total != null &&
+						!likedTargetLoading &&
+						(likedTarget.error != null ||
+							!Object.keys(likedTarget?.items ?? {}).length)
+					}
+					text={
+						likedTarget.error ?? "No Liked " + targetType + " Found"
+					}
+					className="min-h-[250px] h-screen-[50vh] flex justify-center items-center text-lg md:text-3xl"
+				/>
+			)}
 
 			<RingCenterdLoader isLoaded={!likedTargetLoading} />
 		</div>

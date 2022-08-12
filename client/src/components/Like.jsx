@@ -70,6 +70,9 @@ function Like({ item, feedType, hover = false }) {
 			});
 	};
 
+	useEffect(() => {
+		if (activeMusic.id === item.id) setLike(activeMusic.isLiked);
+	}, [activeMusic]);
 	return (
 		<div className="like group">
 			<span

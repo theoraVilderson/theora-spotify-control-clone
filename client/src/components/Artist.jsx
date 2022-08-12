@@ -12,6 +12,8 @@ import Follow from "./Follow";
 import FeedHead from "./FeedHead";
 import FeedPlayBtn from "./FeedPlayBtn";
 import Like from "./Like";
+import NotFound from "./NotFound";
+import { helper } from "../libs/helper";
 
 import { useParams } from "react-router-dom";
 
@@ -32,12 +34,35 @@ function Artist({ feedType, route }) {
 	const [artistTopSongsLoading, setArtistTopSongsLoading] = useState(false);
 	const [artistAlbumsLoading, setArtistAlbumsLoading] = useState(false);
 
-	const backgroundImg = useMemo(() => {
-		const targetImage = artist?.images?.reduce?.((e, n) => {
-			return e.width + e.height <= n.width + n.height ? n : e;
+	const backgroundImg = useMemo(
+		() => helper.getHighSizeImage(artist?.images),
+		[artist]
+	);
+
+	// clean last info
+	useEffect(() => {
+		if (Object.keys(artist).length) {
+			dispatch({
+				type: actionTypes.SET_PLAYER_QUEUE,
+				payload: {
+					name: feedType,
+					data: {},
+				},
+			});
+		}
+	}, [artistId]);
+
+	const onErrorHandler = (e) => {
+		dispatch({
+			type: actionTypes.SET_PLAYER_QUEUE,
+			payload: {
+				name: feedType,
+				data: {
+					error: helper.apiErrorHandler(e),
+				},
+			},
 		});
-		return targetImage?.url;
-	}, [artist]);
+	};
 
 	useEffect(() => {
 		setArtistLoading(true);
@@ -45,15 +70,13 @@ function Artist({ feedType, route }) {
 		fetcher(`/api/artist/${artistId}`)
 			.then((e) => {
 				if (e.data.error) {
+					onErrorHandler(e);
 					return;
 				}
 				console.log("artist", e.data.result);
 				setArtist(e.data.result);
 			})
-			.catch((e) => {
-				console.log(e);
-				// alert("sorry couldn't get Seggestions");
-			})
+			.catch(onErrorHandler)
 			.finally(() => {
 				setArtistLoading(false);
 			});
@@ -78,11 +101,7 @@ function Artist({ feedType, route }) {
 					},
 				});
 			})
-			.catch((e) => {
-				console.log(e);
-
-				// alert("sorry couldn't get Seggestions");
-			})
+			.catch(onErrorHandler)
 			.finally(() => {
 				setArtistTopSongsLoading(false);
 			});
@@ -96,11 +115,6 @@ function Artist({ feedType, route }) {
 			? null
 			: new URL(nextLink).search.slice(1);
 
-		console.log(
-			`/api/artist/${artistId}/albums${
-				theNextLink ? "?" + theNextLink : "?limit=10"
-			}`
-		);
 		setArtistAlbumsLoading(true);
 
 		fetcher(
@@ -121,8 +135,6 @@ function Artist({ feedType, route }) {
 					e[k.id] = k;
 					return e;
 				}, parentContainer);
-
-				console.log(e.data.result.items);
 				dispatch({
 					type: actionTypes.SET_PLAYER_QUEUE,
 					payload: {
@@ -134,11 +146,7 @@ function Artist({ feedType, route }) {
 					},
 				});
 			})
-			.catch((e) => {
-				console.log(e);
-
-				// alert("sorry couldn't get Seggestions");
-			})
+			.catch(onErrorHandler)
 			.finally(() => {
 				setArtistAlbumsLoading(false);
 			});
@@ -174,114 +182,147 @@ function Artist({ feedType, route }) {
 	const linkGen = (subMenue) => {
 		return `/artist/${artistId}/${subMenue}`;
 	};
-	console.log(route);
+
 	return (
 		<div className="artist">
-			<FeedHead backgroundImg={backgroundImg} feedType={feedType}>
-				<div className="flex flex-col gap-2">
-					<h1
-						title={artist?.name}
-						className="md:text-5xl text-lg font-bold activeColor  min-h-[4rem]"
-					>
-						<LinkWithBorder to={`/artist/${artist?.id}`}>
-							{artist?.name}
-						</LinkWithBorder>
-					</h1>
-					<div className="flex gap-2 items-center">
-						<RiUserFollowLine className="activeColor" />
-						<span className="activeColor">
-							{artist?.followers?.total?.toLocaleString()}
-						</span>
-						Fallowers{" "}
-					</div>
-				</div>
-				<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
-					<FeedPlayBtn />
-					<div className=" cursor-pointer">
-						<Follow
-							target={artist}
-							FollowContent={<>Follow</>}
-							UnFollowContent={
-								<>
-									<GoCheck
-										className="w-4 h-4 float-left"
-										style={{
-											color: "var(--text-base)",
-										}}
-									/>
-									Following
-								</>
-							}
-						/>
-					</div>
-				</div>
-			</FeedHead>
-			<div className="flex gap-2  ">
-				<LinkWithBorder to={`${linkGen("top-songs")}`}>
-					<div
-						className={
-							(route === "top-songs" ? "selectedBgColor " : " ") +
-							"p-3 flex justify-center items-center"
-						}
-					>
-						Top Songs
-					</div>
-				</LinkWithBorder>
-
-				<LinkWithBorder to={`${linkGen("albums")}`}>
-					<div
-						className={
-							(route === "albums" ? "selectedBgColor " : " ") +
-							"p-3 flex justify-center items-center"
-						}
-					>
-						Albums
-					</div>
-				</LinkWithBorder>
-			</div>
-
-			{route === "albums" && (
+			{artist?.name ? (
 				<>
-					<div className="artist__albums flex flex-col">
-						{artistAlbums?.items &&
-							Object.values(artistAlbums?.items)?.map?.(
-								(e, k) => {
-									return (
-										<SongItem
-											key={e.id}
-											numberId={k + 1}
-											songInfo={e}
-											feedType={feedType}
-										/>
-									);
-								}
-							)}
-					</div>
-					<RingCenterdLoader
-						isLoaded={!artistLoading && !artistAlbumsLoading}
-					/>
-				</>
-			)}
-
-			{route === "top-songs" && (
-				<>
-					<div className="artist__topSongs flex flex-col">
-						{artistTopSongs?.tracks?.map?.((e, k) => {
-							return (
-								<SongItem
-									key={e.id}
-									numberId={k + 1}
-									songInfo={e}
-									feedType={feedType}
+					<FeedHead backgroundImg={backgroundImg} feedType={feedType}>
+						<div className="flex flex-col gap-2">
+							<h1
+								title={artist?.name}
+								className="md:text-5xl text-lg font-bold activeColor  min-h-[4rem]"
+							>
+								<LinkWithBorder to={`/artist/${artist?.id}`}>
+									{artist?.name}
+								</LinkWithBorder>
+							</h1>
+							<div className="flex gap-2 items-center">
+								<RiUserFollowLine className="activeColor" />
+								<span className="activeColor">
+									{artist?.followers?.total?.toLocaleString()}
+								</span>
+								Fallowers{" "}
+							</div>
+						</div>
+						<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
+							<FeedPlayBtn />
+							<div className=" cursor-pointer">
+								<Follow
+									target={artist}
+									FollowContent={<>Follow</>}
+									UnFollowContent={
+										<>
+											<GoCheck
+												className="w-4 h-4 float-left"
+												style={{
+													color: "var(--text-base)",
+												}}
+											/>
+											Following
+										</>
+									}
 								/>
-							);
-						})}
+							</div>
+						</div>
+					</FeedHead>
+					<div className="flex gap-2  ">
+						<LinkWithBorder to={`${linkGen("top-songs")}`}>
+							<div
+								className={
+									(route === "top-songs"
+										? "selectedBgColor "
+										: " ") +
+									"p-3 flex justify-center items-center"
+								}
+							>
+								Top Songs
+							</div>
+						</LinkWithBorder>
+
+						<LinkWithBorder to={`${linkGen("albums")}`}>
+							<div
+								className={
+									(route === "albums"
+										? "selectedBgColor "
+										: " ") +
+									"p-3 flex justify-center items-center"
+								}
+							>
+								Albums
+							</div>
+						</LinkWithBorder>
 					</div>
-					<RingCenterdLoader
-						isLoaded={!artistLoading && !artistTopSongsLoading}
-					/>
+
+					{route === "albums" ? (
+						Object.values(artistAlbums?.items ?? {}).length ? (
+							<>
+								<div className="artist__albums flex flex-col">
+									{artistAlbums?.items &&
+										Object.values(
+											artistAlbums?.items
+										)?.map?.((e, k) => {
+											return (
+												<SongItem
+													key={e.id}
+													numberId={k + 1}
+													songInfo={e}
+													feedType={feedType}
+												/>
+											);
+										})}
+								</div>
+							</>
+						) : (
+							<NotFound
+								show={!artistAlbumsLoading}
+								className="min-h-[250px] h-screen-[50vh] flex justify-center items-center text-lg"
+							/>
+						)
+					) : null}
+
+					{route === "top-songs" ? (
+						(artistTopSongs?.tracks ?? []).length ? (
+							<>
+								<div className="artist__topSongs flex flex-col">
+									{artistTopSongs?.tracks?.map?.((e, k) => {
+										return (
+											<SongItem
+												key={e.id}
+												numberId={k + 1}
+												songInfo={e}
+												feedType={feedType}
+											/>
+										);
+									})}
+								</div>
+							</>
+						) : (
+							<NotFound
+								show={!artistTopSongsLoading}
+								className="min-h-[250px] h-screen-[50vh] flex justify-center items-center text-lg"
+							/>
+						)
+					) : null}
 				</>
+			) : (
+				<NotFound
+					show={
+						!artistLoading &&
+						!artistTopSongsLoading &&
+						!artistAlbumsLoading
+					}
+					text={artist.error ?? "NO Artist Found"}
+					className="min-h-[250px] h-screen-[50vh] flex justify-center items-center text-lg md:text-3xl"
+				/>
 			)}
+			<RingCenterdLoader
+				isLoaded={
+					!artistLoading &&
+					((route === "top-songs" && !artistTopSongsLoading) ||
+						(route === "albums" && !artistAlbumsLoading))
+				}
+			/>
 		</div>
 	);
 }

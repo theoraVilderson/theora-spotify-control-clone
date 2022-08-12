@@ -12,6 +12,8 @@ import Follow from "./Follow";
 import FeedHead from "./FeedHead";
 import FeedPlayBtn from "./FeedPlayBtn";
 import Like from "./Like";
+import NotFound from "./NotFound";
+import { helper } from "../libs/helper";
 
 import { useParams } from "react-router-dom";
 function User({ feedType }) {
@@ -26,21 +28,39 @@ function User({ feedType }) {
 	const [userPlaylistLoading, setUserPlaylistLoading] = useState(false);
 
 	const backgroundImg = useMemo(() => {
-		const targetImage = user?.images?.reduce?.((e, n) => {
-			e.width = e.width ?? 0;
-			e.height = e.height ?? 0;
-
-			return e.width + e.height <= n.width + n.height ? n : e;
-		}, {});
-		return targetImage?.url;
+		return helper.getHighSizeImage(user?.images);
 	}, [user]);
 
+	useEffect(() => {
+		if (Object.keys(user).length) {
+			dispatch({
+				type: actionTypes.SET_PLAYER_QUEUE,
+				payload: {
+					name: feedType,
+					data: {},
+				},
+			});
+		}
+	}, [userId]);
+
+	const onErrorHandler = (e) => {
+		dispatch({
+			type: actionTypes.SET_PLAYER_QUEUE,
+			payload: {
+				name: feedType,
+				data: {
+					error: helper.apiErrorHandler(e),
+				},
+			},
+		});
+	};
 	useEffect(() => {
 		setUserLoading(true);
 
 		fetcher(`/api/user/${userId}`)
 			.then((e) => {
 				if (e.data.error) {
+					onErrorHandler(e);
 					return;
 				}
 				dispatch({
@@ -51,10 +71,7 @@ function User({ feedType }) {
 					},
 				});
 			})
-			.catch((e) => {
-				console.log(e);
-				// alert("sorry couldn't get Seggestions");
-			})
+			.catch(onErrorHandler)
 			.finally(() => {
 				setUserLoading(false);
 			});
@@ -62,7 +79,6 @@ function User({ feedType }) {
 
 	const playListDataHandler = (e) => {
 		if (e.data.error) {
-			console.error("sorry couldn't get playlist");
 			return;
 		}
 
@@ -71,6 +87,7 @@ function User({ feedType }) {
 		e.data.result.items.forEach((e) => {
 			if (!lastRes[e.id]) lastRes[e.id] = e;
 		});
+		e.data.result.items = lastRes;
 
 		dispatch({
 			type: actionTypes.SET_PLAYER_QUEUE,
@@ -100,7 +117,7 @@ function User({ feedType }) {
 
 		fetcher(url)
 			.then(playListDataHandler)
-			.catch(console.error)
+			.catch(onErrorHandler)
 			.finally((e) => {
 				setUserPlaylistLoading(false);
 			});
@@ -141,60 +158,84 @@ function User({ feedType }) {
 		if (user?.display_name && user.playlists == null)
 			loadMorePlayListItems();
 	}, [user, userId]);
+
 	return (
-		<div className="track">
-			<FeedHead backgroundImg={backgroundImg} feedType={feedType}>
-				<div className="flex flex-col gap-2">
-					<h1
-						title={user?.display_name}
-						className="md:text-5xl text-lg font-bold activeColor  min-h-[4rem]"
-					>
-						<LinkWithBorder to={`/user/${user?.id}`}>
-							{user?.display_name}
-						</LinkWithBorder>
-					</h1>
+		<div className="user">
+			{user?.display_name ? (
+				<>
+					<FeedHead backgroundImg={backgroundImg} feedType={feedType}>
+						<div className="flex flex-col gap-2">
+							<h1
+								title={user?.display_name}
+								className="md:text-5xl text-lg font-bold activeColor  min-h-[4rem]"
+							>
+								<LinkWithBorder to={`/user/${user?.id}`}>
+									{user?.display_name}
+								</LinkWithBorder>
+							</h1>
 
-					<div className="flex gap-2 items-center">
-						<RiUserFollowLine className="activeColor" />
-						<span className="activeColor">
-							{user?.followers?.total?.toLocaleString()}
-						</span>
-						Fallowers{" "}
-					</div>
-				</div>
+							<div className="flex gap-2 items-center">
+								<RiUserFollowLine className="activeColor" />
+								<span className="activeColor">
+									{user?.followers?.total?.toLocaleString()}
+								</span>
+								Fallowers{" "}
+							</div>
+						</div>
 
-				{userInfo.id !== user.id && (
-					<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
-						<Follow
-							target={user}
-							FollowContent={<>Follow</>}
-							UnFollowContent={
-								<>
-									<GoCheck
-										className="w-4 h-4 float-left"
-										style={{
-											color: "var(--text-base)",
-										}}
-									/>
-									Following
-								</>
-							}
-						/>
+						{userInfo.id !== user.id && (
+							<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
+								<Follow
+									target={user}
+									FollowContent={<>Follow</>}
+									UnFollowContent={
+										<>
+											<GoCheck
+												className="w-4 h-4 float-left"
+												style={{
+													color: "var(--text-base)",
+												}}
+											/>
+											Following
+										</>
+									}
+								/>
+							</div>
+						)}
+					</FeedHead>
+					<div className="user__songs flex flex-col">
+						{Object.values(user?.playlists?.items ?? {}).length ? (
+							Object.values(user?.playlists?.items)?.map?.(
+								(e, k) => {
+									return (
+										<SongItem
+											key={e.id}
+											numberId={k + 1}
+											songInfo={e}
+											feedType={feedType}
+										/>
+									);
+								}
+							)
+						) : (
+							<NotFound
+								show={!userPlaylistLoading}
+								className="min-h-[250px] h-screen-[50vh] flex justify-center items-center text-lg"
+							/>
+						)}
 					</div>
-				)}
-			</FeedHead>
-			<div className="user__songs flex flex-col">
-				{user?.playlists?.items?.map?.((e, k) => {
-					return (
-						<SongItem
-							key={e.id}
-							numberId={k + 1}
-							songInfo={e}
-							feedType={feedType}
-						/>
-					);
-				})}
-			</div>
+				</>
+			) : (
+				<NotFound
+					show={
+						!userLoading &&
+						!userPlaylistLoading &&
+						user.error != null
+					}
+					text={user.error}
+					className="min-h-[250px] h-screen-[50vh] flex justify-center items-center text-lg md:text-3xl"
+				/>
+			)}
 
 			<RingCenterdLoader
 				isLoaded={!userLoading && !userPlaylistLoading}

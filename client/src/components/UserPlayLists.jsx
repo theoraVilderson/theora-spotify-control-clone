@@ -12,6 +12,8 @@ import { FaPlus } from "@react-icons/all-files/fa/FaPlus";
 
 import { Scrollbar } from "react-scrollbars-custom";
 import { useParams } from "react-router-dom";
+import NotFound from "./NotFound";
+import { helper } from "../libs/helper";
 
 function UserPlayLists() {
 	const { playlistId } = useParams();
@@ -26,7 +28,7 @@ function UserPlayLists() {
 	const [totalPlaylist, setTotalPlaylist] = useState("");
 	const [currentTotalPlaylist, setCurrentTotalPlaylist] = useState(0);
 
-	const [loadingPlaylistDone, setLoadingPlaylistDone] = useState(true);
+	const [loadingPlaylist, setLoadingPlaylist] = useState(false);
 
 	const playlistsArray = Object.values(playlists);
 
@@ -34,7 +36,6 @@ function UserPlayLists() {
 
 	const playListDataHandler = (e) => {
 		if (e.data.error) {
-			console.error("sorry couldn't get playlist");
 			return;
 		}
 
@@ -52,9 +53,9 @@ function UserPlayLists() {
 	const loadMorePlayListItems = ({ forceToRestart = false } = {}) => {
 		if (!userInfo?.id) return;
 
-		if (!loadingPlaylistDone) return;
+		if (loadingPlaylist) return;
 
-		setLoadingPlaylistDone(false);
+		setLoadingPlaylist(true);
 
 		// just get search params if exists
 		const nextLink = !nextPlaylistItemsLink
@@ -65,22 +66,21 @@ function UserPlayLists() {
 		let query = forceToRestart ? "limit=10" : nextLink;
 		query = query ? "&" + query : "";
 
-		const url = `/api/playlists?userId=${userInfo.id}${query}`;
+		const url = `/api/playlists?userId=${userInfo?.id}${query}`;
 
 		fetcher(url)
 			.then(playListDataHandler)
 			.catch(console.error)
 			.finally((e) => {
-				setLoadingPlaylistDone(true);
+				setLoadingPlaylist(false);
 			});
 	};
 	const loadNewPlayListItem = (e) => {
-		if (!loadingPlaylistDone) {
+		if (loadingPlaylist) {
 			return;
 		}
 
-		const isLoadedAllItems =
-			totalPlaylist === "" || totalPlaylist > playlistsArray.length;
+		const isLoadedAllItems = totalPlaylist > playlistsArray.length;
 
 		const isRechedToEndOfScroll =
 			e.clientHeight + e.scrollTop >= e.scrollHeight;
@@ -98,11 +98,6 @@ function UserPlayLists() {
 
 	useEffect(() => {
 		if (!userInfo?.id) return;
-		// use forceToRestart to just update the infos like totalPlayList number
-		loadMorePlayListItems({ forceToRestart: true });
-	}, [userInfo]);
-	useEffect(() => {
-		if (!userInfo?.id) return;
 
 		const playlistLen = Object.values(playlists).filter((e) => e).length;
 		setTotalPlaylist(totalPlaylist + playlistLen - currentTotalPlaylist);
@@ -110,6 +105,19 @@ function UserPlayLists() {
 		// // use forceToRestart to just update the infos like totalPlayList number
 		// loadMorePlayListItems({ forceToRestart: true });
 	}, [playlists]);
+
+	// clean last info
+	useEffect(() => {
+		if (Object.keys(playlists).length) {
+			dispatch({ type: actionTypes.SET_PLAYLISTS, payload: {} });
+		}
+	}, [userInfo?.id]);
+
+	useEffect(() => {
+		if (!userInfo?.id) return;
+		// use forceToRestart to just update the infos like totalPlayList number
+		loadMorePlayListItems({ forceToRestart: true });
+	}, [userInfo?.id]);
 
 	return (
 		<div className="sidebar__playLists mb-2 flex-1 flex flex-col justify-center ">
@@ -127,25 +135,36 @@ function UserPlayLists() {
 				onUpdate={loadNewPlayListItem}
 			>
 				<div>
-					{playlistsArray.map((item, key) => {
-						// if item is deleted then use empty div
-						// (for having place for undo deleting)
-						return item ? (
-							<PlayListItem
-								active={item.id === activePlayList}
-								key={item.id}
-								{...item}
-							/>
-						) : (
-							<div
-								className="hidden"
-								key={Object.keys(playlists)[key]}
-							></div>
-						);
-					})}
+					{playlistsArray?.length ? (
+						playlistsArray.map((item, key) => {
+							// if item is deleted then use empty div
+							// (for having place for undo deleting)
+							if (item) {
+								item.isFollowed = true;
+							}
+							return item ? (
+								<PlayListItem
+									active={item.id === activePlayList}
+									key={item.id}
+									{...item}
+									item={item}
+								/>
+							) : (
+								<div
+									className="hidden"
+									key={Object.keys(playlists)[key]}
+								></div>
+							);
+						})
+					) : (
+						<NotFound
+							show={!loadingPlaylist}
+							className="flex justify-center items-center text-lg "
+						/>
+					)}
 				</div>
 
-				<RingCenterdLoader isLoaded={loadingPlaylistDone} />
+				<RingCenterdLoader isLoaded={!loadingPlaylist} />
 			</Scrollbar>
 		</div>
 	);

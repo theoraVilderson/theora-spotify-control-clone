@@ -5,7 +5,13 @@ import { RingCenterdLoader } from "./Loading";
 
 import { useEffect, useState } from "react";
 
-function Follow({ target, FollowContent, UnFollowContent, ...restProps }) {
+function Follow({
+	target,
+	FollowContent,
+	UnFollowContent,
+	loaderProps = {},
+	...restProps
+}) {
 	const [globalData, dispatch] = useGlobalContext();
 	const { userInfo, playlists } = globalData;
 	const fetcher = useFetcher([globalData, dispatch]);
@@ -119,13 +125,22 @@ function Follow({ target, FollowContent, UnFollowContent, ...restProps }) {
 		setIsFollowed(target?.isFollowed);
 	}, [target, target?.isFollowed]);
 
+	useEffect(() => {
+		console.log("changed reco", type);
+		if (type !== "playlist") return;
+
+		if (playlists[id] == false) {
+			setIsFollowed(false);
+		}
+	}, [playlists]);
+
 	return (
 		<button
 			className="bg-transparent  w-32 h-12 rounded-full border-2 border-current border-solid flex justify-center items-center gap-2"
 			{...restProps}
 			onClick={followAction}
 		>
-			<RingCenterdLoader isLoaded={!isProcessFollow} />
+			<RingCenterdLoader isLoaded={!isProcessFollow} {...loaderProps} />
 			{isProcessFollow
 				? null
 				: isFollowed

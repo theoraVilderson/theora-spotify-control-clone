@@ -16,17 +16,23 @@ import { BsFillVolumeUpFill } from "@react-icons/all-files/bs/BsFillVolumeUpFill
 import { BsMusicNoteList } from "@react-icons/all-files/bs/BsMusicNoteList";
 import { FaDesktop } from "@react-icons/all-files/fa/FaDesktop";
 
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+	Link,
+	useLocation,
+	useNavigate,
+	useSearchParams,
+} from "react-router-dom";
 import "./Sidebar.css";
 import MenuItem from "./MenuItem";
 import SliderRange from "./SliderRange";
 import UserPlayLists from "./UserPlayLists";
+import LinkWithBorder from "./LinkWithBorder";
 
 import { useEffect, useState, useMemo } from "react";
 
 import defaultPlayListImg from "../imgs/defaultPlayList.png";
 
-function Sidebar() {
+function Sidebar({ feedType }) {
 	const [globalData, dispatch] = useGlobalContext();
 	const { userInfo, activeMenu, playerState } = globalData;
 	const fetcher = useFetcher([globalData, dispatch]);
@@ -80,7 +86,11 @@ function Sidebar() {
 
 	const activeMusicItem = playerState?.item;
 	const navigate = useNavigate();
-	const [search, setSearch] = useState("");
+	const searchQuery = useSearchParams()[0].get("query");
+
+	const [search, setSearch] = useState(
+		feedType === "Search" ? searchQuery : ""
+	);
 	const [updateOnDefaultChange, setUpdateOnDefaultChange] = useState(true);
 	const [updateOnDefaultIsDisabled, setUpdateOnDefaultIsDisabled] =
 		useState(false);
@@ -191,11 +201,13 @@ function Sidebar() {
 					/>
 					<div className="flex flex-col justify-center ">
 						<div className="text-sm activeColor cursor-pointer">
-							Discovery
+							{feedType}
 						</div>
-						<div className="text-xs cursor-pointer">
-							Today music
-						</div>
+						<span className="text-xs cursor-pointer opacity-50 hover:opacity-100 inline-flex self-start capitalize">
+							<LinkWithBorder to={"/user/" + userInfo?.id}>
+								{userInfo?.display_name}
+							</LinkWithBorder>
+						</span>
 					</div>
 				</div>
 				<div

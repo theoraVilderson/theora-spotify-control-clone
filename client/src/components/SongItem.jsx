@@ -17,7 +17,7 @@ import { FaLock } from "@react-icons/all-files/fa/FaLock";
 import { FaUnlock } from "@react-icons/all-files/fa/FaUnlock";
 import { GoCheck } from "@react-icons/all-files/go/GoCheck";
 
-function SongItem({ songInfo, numberId, feedType }) {
+function SongItem({ songInfo, numberId, feedType, action = true }) {
 	const [globalData, dispatch] = useGlobalContext();
 	const { userInfo, activeMusic } = globalData;
 
@@ -188,24 +188,28 @@ function SongItem({ songInfo, numberId, feedType }) {
 				</div>
 			</div>
 			<div className="flex w-full sm:w-auto justify-between sm:justify-scratch items-center gap-4 p-5">
-				{isFollowable ? (
-					<Follow
-						target={songData}
-						FollowContent={<>Follow</>}
-						UnFollowContent={
-							<>
-								<GoCheck
-									className="w-4 h-4 float-left"
-									style={{
-										color: "var(--text-base)",
-									}}
-								/>
-								Following
-							</>
-						}
-					/>
-				) : (
-					<Like item={songData} feedType={feedType} hover />
+				{!action ? null : (
+					<>
+						{isFollowable ? (
+							<Follow
+								target={songData}
+								FollowContent={<>Follow</>}
+								UnFollowContent={
+									<>
+										<GoCheck
+											className="w-4 h-4 float-left"
+											style={{
+												color: "var(--text-base)",
+											}}
+										/>
+										Following
+									</>
+								}
+							/>
+						) : (
+							<Like item={songData} feedType={feedType} hover />
+						)}
+					</>
 				)}
 
 				<div>

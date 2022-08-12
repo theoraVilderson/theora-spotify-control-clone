@@ -14,8 +14,11 @@ import Follow from "./Follow";
 import FeedHead from "./FeedHead";
 import FeedPlayBtn from "./FeedPlayBtn";
 import Like from "./Like";
+import SearchResultItem from "./SearchResultItem";
+import NotFound from "./NotFound";
 import heartImage from "../imgs/heart.png";
 import { useSearchParams } from "react-router-dom";
+import { helper } from "../libs/helper";
 function Search({ feedType }) {
 	const [globalData, dispatch] = useGlobalContext();
 	const { userInfo, playerQueue: allPlayerQueue, activeMusic } = globalData;
@@ -27,18 +30,34 @@ function Search({ feedType }) {
 	const searchQuery = useSearchParams()[0].get("query");
 
 	const backgroundImg = heartImage;
-
-	const playListDataHandler = (e) => {
+	const onErrorHandler = (e) => {
+		dispatch({
+			type: actionTypes.SET_PLAYER_QUEUE,
+			payload: {
+				name: feedType,
+				data: {
+					error: helper.apiErrorHandler(e),
+				},
+			},
+		});
+	};
+	const searchHandler = (e) => {
 		if (e.data.error) {
+			onErrorHandler(e);
 			return;
 		}
 
-		// const lastRes = search?.items ?? {};
+		const lastRes = search ?? {};
 
-		// e.data.result.items.forEach((e) => {
-		// 	if (!lastRes[e.id]) lastRes[e.id] = e;
-		// });
-		// e.data.result.items = lastRes;
+		Object.keys(e.data.result).forEach((searchType) => {
+			const item = e.data.result[searchType];
+
+			item.items = item.items.reduce((p, e) => {
+				p[e.id] = e;
+				return p;
+			}, {});
+			lastRes[searchType] = item;
+		});
 
 		dispatch({
 			type: actionTypes.SET_PLAYER_QUEUE,
@@ -54,80 +73,71 @@ function Search({ feedType }) {
 
 		setSearchLoading(true);
 
-		// just get search params if exists
-		const nextLink = !search?.next
-			? ""
-			: new URL(search?.next).search.slice(1);
-
-		// force it means start in to just fetch first part
-		let query = nextLink ? nextLink : "";
-
-		query = `?q=${searchQuery}${query ? "&" + query : ""}`;
+		const query = `?query=${searchQuery}`;
 
 		const url = `/api/search${query}`;
 
 		fetcher(url)
-			.then(playListDataHandler)
-			.catch(console.error)
+			.then(searchHandler)
+			.catch(onErrorHandler)
 			.finally((e) => {
 				setSearchLoading(false);
 			});
 	};
 
-	// useEffect(() => {
-	// 	if (!search?.items) return;
-
-	// 	const action = (e) => {
-	// 		const html = document.documentElement;
-	// 		if (searchLoading) {
-	// 			return;
-	// 		}
-
-	// 		const isLoadedAllItems = search?.next != null;
-
-	// 		const isRechedToEndOfScroll =
-	// 			html.clientHeight + html.scrollTop >= html.scrollHeight;
-
-	// 		// load more if reached to end of scroll and if is there new items
-
-	// 		if (!(isRechedToEndOfScroll && isLoadedAllItems)) return;
-
-	// 		searchAction();
-	// 	};
-
-	// 	window.addEventListener("scroll", action);
-
-	// 	return () => {
-	// 		window.removeEventListener("scroll", action);
-	// 	};
-	// }, [search]);
-
 	useEffect(() => {
 		if (!searchQuery?.trim?.()) return;
 
+		if (Object.keys(search).length) {
+			dispatch({
+				type: actionTypes.SET_PLAYER_QUEUE,
+				payload: {
+					name: feedType,
+					data: null,
+				},
+			});
+		}
 		searchAction(searchQuery);
 	}, [searchQuery]);
 
+	const notFound = !!!Object.keys(search)
+		?.map?.((keyName, k) => {
+			const item = search[keyName];
+			return Object.values(item.items).length;
+		})
+		?.find?.((e) => e);
+
 	return (
 		<div className="track">
-			<h1 className="md:text-5xl text-lg font-bold activeColor ">
-				Search
-			</h1>
-			<div className="p-3">
-				<div className="search__songs flex flex-col">
-					{search?.items &&
-						Object.values(search?.items)?.map?.((e, k) => {
-							return (
-								<SongItem
-									key={e.id}
-									numberId={k + 1}
-									songInfo={e}
-									feedType={feedType}
-								/>
-							);
-						})}
-				</div>
-			</div>
+			{Object.keys(search).length ? (
+				<>
+					<h1 className="md:text-4xl text-lg font-bold activeColor p-2 ">
+						Search
+					</h1>
+					<div className="p-3">
+						{!notFound ? (
+							<div className="search__songs flex flex-col">
+								{Object.keys(search)?.map?.((keyName, k) => {
+									const item = search[keyName];
+									return (
+										<SearchResultItem
+											key={keyName}
+											searchItem={item}
+											searchItemType={keyName}
+											feedType={feedType}
+										/>
+									);
+								})}
+							</div>
+						) : (
+							<NotFound
+								className="min-h-[250px] h-screen-[50vh] flex justify-center items-center text-lg md:text-3xl"
+								text={search.error}
+							/>
+						)}
+					</div>
+				</>
+			) : null}
 
 			<RingCenterdLoader isLoaded={!searchLoading} />
 		</div>

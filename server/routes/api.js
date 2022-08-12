@@ -126,7 +126,7 @@ router.get("/search", async (req, res) => {
 		offset = 0,
 		limit = 10,
 		type = "album,artist,playlist,track,show,episode",
-		q = "",
+		query: q = "",
 	} = req.query;
 
 	const userInfo = await req.spotifyApi.search({ offset, limit, type, q });
@@ -264,9 +264,10 @@ router.get("/playlistItems/:playlistId", async (req, res) => {
 });
 router.get("/playlistFullInfo/:playlistId", async (req, res) => {
 	const { playlistId } = req.params;
-	const { offset = 0, limit = 20 } = req.query;
+	const { offset = 0, limit = 20, userId } = req.query;
 	const playlistFullInfo = await req.spotifyApi.getFullyPlayList(
 		playlistId,
+		userId,
 		offset,
 		limit
 	);
@@ -501,6 +502,7 @@ router
 router.get("/track/lyrics", async (req, res) => {
 	const { artists, name } = req.query;
 
+	console.log({ artists, name });
 	const lyrics = (await lyricsFinder(artists, name)) || {
 		error: "COULD_NOT_FIND_LYRICS",
 	};

@@ -207,7 +207,7 @@ class SpotifyApi {
 			return res.data;
 		});
 	}
-	async getFullyPlayList(playlistId, offset = 0, limit = 20) {
+	async getFullyPlayList(playlistId, userId, offset = 0, limit = 20) {
 		return this.requestWrapper(async () => {
 			const playListInfo = await this.getPlayList(playlistId);
 			const playListItems = await this.getPlayListItems(
@@ -216,15 +216,13 @@ class SpotifyApi {
 				limit
 			);
 
-			const self = await this.getMe();
-
 			if (playListInfo.error) throw playListInfo;
 			if (playListItems.error) throw playListItems;
-			if (self.error) throw self;
+
 			const isPlaylistFollowed = await this.isTargetFollowed(
 				playlistId,
 				"playlist",
-				self.id
+				userId
 			);
 			if (isPlaylistFollowed.error) throw isPlaylistFollowed;
 
@@ -237,10 +235,8 @@ class SpotifyApi {
 			});
 
 			return {
-				playlistInfo: {
-					...playListInfo,
-					isFollowed: isPlaylistFollowed[0],
-				},
+				...playListInfo,
+				isFollowed: isPlaylistFollowed[0],
 				playlistItems: playListItems,
 			};
 		});
@@ -838,17 +834,6 @@ class SpotifyApi {
 			const query = querystring.stringify(data);
 			const url = `search?${query}`;
 			const res = await this.userReq.get(url);
-			// const allEpisodesId = res.data.items.map((e) => e.id);
-
-			// const episodesLike = await this.isLikedTarget(
-			// 	allEpisodesId + "",
-			// 	"episode"
-			// );
-			// if (episodesLike.error) throw episodesLike;
-
-			// res.data.items = res.data.items.map((e, k) => {
-			// 	return { ...e, isLiked: episodesLike[k] };
-			// });
 
 			return res.data;
 		});
