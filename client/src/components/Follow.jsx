@@ -10,6 +10,7 @@ function Follow({
 	FollowContent,
 	UnFollowContent,
 	loaderProps = {},
+	onDone = () => {},
 	...restProps
 }) {
 	const [globalData, dispatch] = useGlobalContext();
@@ -109,10 +110,12 @@ function Follow({
 					type: actionTypes.SET_PLAYLIST,
 					payload: newData,
 				});
+
+				onDone(null);
 			})
 			.catch((e) => {
+				onDone(e);
 				console.log(e);
-				alert(`sorry couldn't ${isFollowed ? "unFollow" : "follow"}`);
 			})
 			.finally(() => {
 				setIsProcessFollow(false);

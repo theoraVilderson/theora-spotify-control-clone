@@ -1,5 +1,23 @@
 import "./App.css";
 import { useState, useEffect } from "react";
+// Import React FilePond
+import { registerPlugin } from "react-filepond";
+
+// Import FilePond styles
+import "filepond/dist/filepond.min.css";
+
+// Import the Image EXIF Orientation and Image Preview plugins
+// Note: These need to be installed separately
+// `npm i filepond-plugin-image-preview filepond-plugin-image-exif-orientation --save`
+import FilePondPluginImageExifOrientation from "filepond-plugin-image-exif-orientation";
+import FilePondPluginImagePreview from "filepond-plugin-image-preview";
+import FilePondPluginImageResize from "filepond-plugin-image-resize";
+import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
+
+import FilePondPluginFileValidateSize from "filepond-plugin-file-validate-size";
+
+import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
+
 import Loading from "./components/Loading";
 
 import { useGlobalContext } from "./context/globalContext";
@@ -13,6 +31,16 @@ import { cookieHandler } from "./libs/cookieHandler";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import useFetcher from "./hooks/fetcher";
+
+// Register the plugins
+registerPlugin(
+  FilePondPluginImageExifOrientation,
+  FilePondPluginImagePreview,
+  FilePondPluginImageResize,
+  FilePondPluginFileValidateType,
+  FilePondPluginFileValidateSize
+);
+
 function App() {
   const [loadingDone, setLoadingDone] = useState(false);
   const [globalData, dispatch] = useGlobalContext();

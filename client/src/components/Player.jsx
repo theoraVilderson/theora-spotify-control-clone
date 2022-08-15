@@ -108,9 +108,9 @@ function Player({ feedType }) {
 		const action = (timer = setTimeout(function time() {
 			if (timer == null) return 1;
 
-			// stateChecker();
+			stateChecker();
 
-			return (timer = setTimeout(time, 5000));
+			return (timer = setTimeout(time, 10000));
 		}, 500));
 
 		return () => {
@@ -252,13 +252,9 @@ function Player({ feedType }) {
 	const onHitReapet = () => {
 		const states = ["off", "context", "track"];
 
-		const nextState =
-			states[
-				Math.max(
-					Math.min(0, states.indexOf(playerState.repeat_state) + 1),
-					3
-				)
-			];
+		let nextState = states.indexOf(playerState.repeat_state) + 1;
+
+		nextState = states[nextState >= states.length ? 0 : nextState];
 
 		fetcher(`/api/player/repeat?state=${nextState}`, {
 			method: "PUT",

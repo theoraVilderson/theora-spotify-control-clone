@@ -1,5 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
-
+import { useEffect, useState, useMemo, useReducer } from "react";
 import { useGlobalContext } from "../context/globalContext";
 import { actionTypes } from "../reducer/globalReducer";
 
@@ -15,11 +14,14 @@ import { useParams } from "react-router-dom";
 import NotFound from "./NotFound";
 import { helper } from "../libs/helper";
 
-function UserPlayLists() {
+import PlaylistPopup from "./PlaylistPopup";
+import { useNavigate } from "react-router-dom";
+
+function UserPlayLists({ feedType }) {
 	const { playlistId } = useParams();
 
 	const [globalData, dispatch] = useGlobalContext();
-	const { userInfo, playlists, activePlayList } = globalData;
+	const { userInfo, playlists, activePlayList, playerQueue } = globalData;
 
 	const fetcher = useFetcher([globalData, dispatch]);
 
@@ -33,6 +35,7 @@ function UserPlayLists() {
 	const playlistsArray = Object.values(playlists);
 
 	const activePlayListItem = playlists?.[activePlayList];
+	const navigate = useNavigate();
 
 	const playListDataHandler = (e) => {
 		if (e.data.error) {
@@ -119,6 +122,57 @@ function UserPlayLists() {
 		loadMorePlayListItems({ forceToRestart: true });
 	}, [userInfo?.id]);
 
+	const [createPlaylistDialogOpen, setCreatePlaylistDialogOpen] =
+		useState(false);
+
+	const setNewPlaylist = (newplaylist) => {
+		// update from playlist
+		// update fro user playList Feed
+		// update from playlist Feed
+
+		newplaylist.isFollowed = true;
+		let newData = {
+			at: playlists[newplaylist.id] != null ? "end" : "start",
+		};
+
+		newData.data = { [newplaylist.id]: newplaylist };
+
+		console.log(newplaylist);
+
+		dispatch({
+			type: actionTypes.SET_PLAYLIST,
+			payload: newData,
+		});
+		const queue = playerQueue[feedType] ?? {};
+		const feed = feedType.toLowerCase();
+
+		if (feed === "playlist" && queue.id === newplaylist.id) {
+			const playlistItems = queue.playlistItems;
+
+			dispatch({
+				type: actionTypes.SET_PLAYER_QUEUE,
+				payload: {
+					name: feedType,
+					data: { ...newplaylist, playlistItems },
+				},
+			});
+		} else if (
+			feed === "user" &&
+			queue.playlists.items[newplaylist.id] != null
+		) {
+			queue.playlists.items[newplaylist.id] = newplaylist;
+			console.log("here", queue.playlists);
+
+			dispatch({
+				type: actionTypes.SET_PLAYER_QUEUE,
+				payload: {
+					name: feedType,
+					data: { ...queue, playlists: queue.playlists },
+				},
+			});
+		}
+		// navigate("/playlist/" + newplaylist.id);
+	};
 	return (
 		<div className="sidebar__playLists mb-2 flex-1 flex flex-col justify-center ">
 			{/* PlayLists */}
@@ -126,8 +180,24 @@ function UserPlayLists() {
 				<span className="text-xs">
 					PLAYLISTS {totalPlaylist ? `(${totalPlaylist})` : null}
 				</span>
-				<FaPlus className="activeColor cursor-pointer mr-2" />
+				<FaPlus
+					className="activeColor cursor-pointer mr-2"
+					onClick={() => {
+						setCreatePlaylistDialogOpen(
+							true && totalPlaylist != ""
+						);
+					}}
+				/>
 			</h2>
+
+			{totalPlaylist != "" && createPlaylistDialogOpen ? (
+				<PlaylistPopup
+					open={createPlaylistDialogOpen}
+					total={totalPlaylist}
+					onChange={setCreatePlaylistDialogOpen}
+					onSuccess={setNewPlaylist}
+				/>
+			) : null}
 
 			<Scrollbar
 				style={{ height: 140 }}
@@ -148,6 +218,9 @@ function UserPlayLists() {
 									key={item.id}
 									{...item}
 									item={item}
+									userId={userInfo?.id}
+									total={totalPlaylist}
+									onSuccess={setNewPlaylist}
 								/>
 							) : (
 								<div

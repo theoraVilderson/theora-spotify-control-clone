@@ -1,5 +1,6 @@
 import "./MenuItem.css";
 import { Link } from "react-router-dom";
+
 function MenuItem({ Icon, name, active, link }) {
 	return (
 		<Link to={`/${link ?? name}`}>

@@ -1,6 +1,8 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 const querystring = require("querystring");
+const FormData = require("form-data");
+
 class SpotifyApi {
 	constructor({
 		client_id,
@@ -172,6 +174,48 @@ class SpotifyApi {
 				accessToken,
 				refreshToken: newRefreshToken ?? userRefreshToken,
 			};
+		});
+	}
+	async setPlaylist({ id, userId, playlistCover, ...rest }) {
+		return this.requestWrapper(async () => {
+			const method = !id ? "post" : "put";
+
+			const url = id
+				? `/playlists/${id}?ids=${userId}`
+				: `users/${userId}/playlists`;
+
+			console.log(rest);
+			const res = await this.userReq[method](url, rest, {
+				validateStatus: function (status) {
+					return status >= 200 && status <= 204; // default
+				},
+			});
+			id = id ?? res.data.id;
+			if (playlistCover) {
+				const uploadRes = await this.userReq.put(
+					`/playlists/${id}/images`,
+					playlistCover.toString("base64"),
+					{
+						headers: {
+							"Content-Type": "image/jpeg",
+						},
+						validateStatus: function (status) {
+							return status >= 200 && status <= 204; // default
+						},
+					}
+				);
+			}
+
+			if (res.data) {
+				const getUploadedImage = await this.userReq.get(
+					`/playlists/${id}/images`
+				);
+				res.data.images = getUploadedImage.data;
+
+				return res.data;
+			}
+			const playlist = await this.getPlayList(id);
+			return playlist;
 		});
 	}
 	async getPlayLists(userId, offset = 0, limit = 20, checkLike = false) {
@@ -465,7 +509,7 @@ class SpotifyApi {
 			// if(items.length)
 			let url = `recommendations?`;
 			if (!items.length) {
-				url += "seed_genres=classical";
+				url += "seed_genres=classical,alt-rock,alternative";
 			} else {
 				const targetArtist = items[~~(Math.random() * items.length)];
 				url += `seed_artists=${targetArtist.id}`;
@@ -473,11 +517,17 @@ class SpotifyApi {
 
 			const suggestionsTracks = await this.userReq.get(url);
 
-			const targetArtist = await this.getArtist(
-				suggestionsTracks.data.seeds[0].id
+			let findArtistSeed = suggestionsTracks.data.seeds.find(
+				(e) => e.type === "artist"
 			);
+			findArtistSeed =
+				findArtistSeed?.id ??
+				suggestionsTracks?.data?.tracks?.[0]?.artists?.[0]?.id;
+
+			const targetArtist = await this.getArtist(findArtistSeed);
 			if (targetArtist.error) throw targetArtist;
 
+			console.log(suggestionsTracks.data, targetArtist);
 			const isFollowed = await this.isTargetFollowed(
 				suggestionsTracks.data.seeds[0].id,
 				"artist"

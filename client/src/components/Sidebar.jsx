@@ -189,7 +189,7 @@ function Sidebar({ feedType }) {
 					);
 				})}
 			</div>
-			<UserPlayLists />
+			<UserPlayLists feedType={feedType} />
 
 			{/*Player Section 1*/}
 			<div className="flex flex-col gap-3 pb-2">

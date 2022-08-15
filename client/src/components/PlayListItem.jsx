@@ -2,11 +2,29 @@ import { Link } from "react-router-dom";
 import { BsMusicNoteList } from "@react-icons/all-files/bs/BsMusicNoteList";
 import { BsTrash } from "@react-icons/all-files/bs/BsTrash";
 import { FaLock } from "@react-icons/all-files/fa/FaLock";
+import { BiEdit } from "@react-icons/all-files/bi/BiEdit";
+
 import Follow from "./Follow";
+import PlaylistPopup from "./PlaylistPopup";
+
+import { useState } from "react";
 
 import "./PlayListItem.css";
 
-function PlayListItem({ id, name, active, public: isPublic, item, ...rest }) {
+function PlayListItem({
+	id,
+	name,
+	active,
+	public: isPublic,
+	item,
+	userId,
+	total,
+	onSuccess,
+	...rest
+}) {
+	const [createPlaylistDialogOpen, setCreatePlaylistDialogOpen] =
+		useState(false);
+
 	return (
 		<div
 			className={`flex gap-3 text-sm sidebarSpace items-center playListItem ${
@@ -30,9 +48,27 @@ function PlayListItem({ id, name, active, public: isPublic, item, ...rest }) {
 					<div>{name}</div>
 				</div>
 			</Link>
-			<div>
+			{item.owner.id === userId || item.collaborative ? (
+				<div className="flex justify-center items-center cursor-pointer">
+					<BiEdit
+						onClick={() => {
+							setCreatePlaylistDialogOpen(true);
+						}}
+					/>
+				</div>
+			) : null}
+			{total != "" && createPlaylistDialogOpen ? (
+				<PlaylistPopup
+					open={createPlaylistDialogOpen}
+					total={total}
+					onChange={setCreatePlaylistDialogOpen}
+					onSuccess={onSuccess}
+					playlist={item}
+				/>
+			) : null}
+			<div className="flex justify-center items-center">
 				<Follow
-					className=""
+					className="" // the class need to be empty !
 					target={item}
 					UnFollowContent={<BsTrash />}
 					loaderProps={{ width: 20, height: 20 }}

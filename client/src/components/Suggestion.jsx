@@ -66,59 +66,64 @@ function Suggestion({ feedType }) {
 
 	return (
 		<div className="suggestions">
-			<FeedHead backgroundImg={backgroundImg} feedType={feedType}>
-				<div className="flex flex-col gap-2">
-					<h1
-						title={suggestions?.targetArtist?.name}
-						className="md:text-5xl text-lg font-bold activeColor  min-h-[4rem]"
-					>
-						<LinkWithBorder
-							to={`/artist/${suggestions?.targetArtist?.id}`}
-						>
-							{suggestions?.targetArtist?.name}
-						</LinkWithBorder>
-					</h1>
-					<div className="flex gap-2 items-center">
-						<RiUserFollowLine className="activeColor" />
-						<span className="activeColor">
-							{suggestions?.targetArtist?.followers?.total?.toLocaleString()}
-						</span>
-						Fallowers{" "}
-					</div>
-				</div>
-				<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
-					<FeedPlayBtn />
+			{suggestions?.targetArtist ? (
+				<>
+					<FeedHead backgroundImg={backgroundImg} feedType={feedType}>
+						<div className="flex flex-col gap-2">
+							<h1
+								title={suggestions?.targetArtist?.name}
+								className="md:text-5xl text-lg font-bold activeColor  min-h-[4rem]"
+							>
+								<LinkWithBorder
+									to={`/artist/${suggestions?.targetArtist?.id}`}
+								>
+									{suggestions?.targetArtist?.name}
+								</LinkWithBorder>
+							</h1>
+							<div className="flex gap-2 items-center">
+								<RiUserFollowLine className="activeColor" />
+								<span className="activeColor">
+									{suggestions?.targetArtist?.followers?.total?.toLocaleString()}
+								</span>
+								Fallowers{" "}
+							</div>
+						</div>
+						<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
+							<FeedPlayBtn />
 
-					<Follow
-						target={suggestions?.targetArtist}
-						FollowContent={<>Follow</>}
-						UnFollowContent={
-							<>
-								<GoCheck
-									className="w-4 h-4 float-left"
-									style={{
-										color: "var(--text-base)",
-									}}
+							<Follow
+								target={suggestions?.targetArtist}
+								FollowContent={<>Follow</>}
+								UnFollowContent={
+									<>
+										<GoCheck
+											className="w-4 h-4 float-left"
+											style={{
+												color: "var(--text-base)",
+											}}
+										/>
+										Following
+									</>
+								}
+							/>
+						</div>
+					</FeedHead>
+
+					<div className="suggestions__songs flex flex-col">
+						{suggestions?.tracks?.map?.((e, k) => {
+							return (
+								<SongItem
+									key={e.id}
+									numberId={k + 1}
+									songInfo={e}
+									feedType={feedType}
 								/>
-								Following
-							</>
-						}
-					/>
-				</div>
-			</FeedHead>
+							);
+						})}
+					</div>
+				</>
+			) : null}
 
-			<div className="suggestions__songs flex flex-col">
-				{suggestions?.tracks?.map?.((e, k) => {
-					return (
-						<SongItem
-							key={e.id}
-							numberId={k + 1}
-							songInfo={e}
-							feedType={feedType}
-						/>
-					);
-				})}
-			</div>
 			<RingCenterdLoader isLoaded={loadingPlaylistDone} />
 		</div>
 	);

@@ -20,7 +20,6 @@ import { GoCheck } from "@react-icons/all-files/go/GoCheck";
 function SongItem({ songInfo, numberId, feedType, action = true }) {
 	const [globalData, dispatch] = useGlobalContext();
 	const { userInfo, activeMusic } = globalData;
-
 	const [songData, setSongData] = useState(songInfo);
 	const { name, artists, id, duration_ms, isLiked, explicit } = songData;
 	useEffect(() => {
@@ -29,6 +28,9 @@ function SongItem({ songInfo, numberId, feedType, action = true }) {
 		}
 	}, [songInfo, activeMusic]);
 
+	useEffect(() => {
+		setSongData(songInfo);
+	}, [songInfo]);
 	const fetcher = useFetcher([globalData, dispatch]);
 
 	const images = songInfo?.album?.images ?? songInfo?.images;
@@ -180,6 +182,12 @@ function SongItem({ songInfo, numberId, feedType, action = true }) {
 						"episode" ? null : !songInfo?.description?.trim?.() ? (
 							<span>{songInfo.release_date}</span>
 						) : (
+							<span key={songInfo.id}>
+								{songInfo.description}
+							</span>
+						)}
+						{songInfo.type !==
+						"playlist" ? null : !songInfo?.description?.trim?.() ? null : (
 							<span key={songInfo.id}>
 								{songInfo.description}
 							</span>

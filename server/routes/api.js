@@ -1,6 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const lyricsFinder = require("lyrics-finder");
+const Genius = require("genius-lyrics");
+const Client = new Genius.Client(); // Scrapes if no key is provided
+const multer = require("multer");
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 // check if user live
 
 async function isUserLive(req) {
@@ -203,6 +208,40 @@ router.get("/suggestions", async (req, res) => {
 
 	return res.json({ status: true, data: { result: suggestions } });
 });
+
+async function playListSetHandlerasync(req, res) {
+	const { id, userId } = req.query;
+
+	const {
+		playlistName = "new playlist",
+		playlistDescription = "this is description",
+		isPublic = false,
+		isCollaborative = false,
+	} = req.body;
+
+	const playlistCover = req.file;
+
+	const playlist = await req.spotifyApi.setPlaylist({
+		playlistCover: playlistCover?.buffer,
+		name: playlistName,
+		description: playlistDescription,
+		public: isPublic !== "false",
+		collaborative: isCollaborative !== "false",
+		id,
+		userId,
+	});
+
+	const error = globalErrorHandler("COULD_NOT_SET_PLAYLIST", playlist);
+
+	if (error) {
+		return res.json(error);
+	}
+	return res.json({ status: true, data: { result: playlist } });
+}
+router
+	.route("/playlist")
+	.post(upload.single("playlistCover"), playListSetHandlerasync)
+	.put(upload.single("playlistCover"), playListSetHandlerasync);
 
 // PlayList Route
 router.get("/playlists", async (req, res) => {
@@ -502,10 +541,28 @@ router
 router.get("/track/lyrics", async (req, res) => {
 	const { artists, name } = req.query;
 
-	console.log({ artists, name });
-	const lyrics = (await lyricsFinder(artists, name)) || {
-		error: "COULD_NOT_FIND_LYRICS",
-	};
+	let lyrics = await lyricsFinder(artists, name);
+
+	// if first lyric finder dosn't help then we use second one
+
+	if (!lyrics) {
+		try {
+			const response = await Client.songs.search(`${name} ${artists}`);
+
+			if (response[0]) {
+				lyrics = await response[0].lyrics();
+			} else {
+				lyrics = {
+					error: "COULD_NOT_FIND_LYRICS",
+				};
+			}
+		} catch (e) {
+			lyrics = {
+				error: "COULD_NOT_FIND_LYRICS",
+			};
+		}
+	}
+
 	const error = globalErrorHandler("COULD_NOT_FIND_LYRICS", lyrics);
 
 	if (error) {
@@ -730,7 +787,7 @@ router.put("/player/seek", async (req, res) => {
 	return res.json({ status: true, data: { result: playerSeek } });
 });
 router.put("/player/play", async (req, res) => {
-	let { uris = [], context_uri = "", offset = "" } = req.query;
+	let { uris = "", context_uri = "", offset = "" } = req.query;
 
 	uris = uris.split(",");
 
@@ -759,6 +816,7 @@ router.put("/player/pause", async (req, res) => {
 });
 router.put("/player/repeat", async (req, res) => {
 	const { state } = req.query;
+	console.log(state);
 	const playerRepeat = await req.spotifyApi.playerRepeat(state);
 	const error = globalErrorHandler("COULD_NOT_SET_REPEAT", playerRepeat);
 
