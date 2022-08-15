@@ -224,7 +224,7 @@ function PlaylistPopup({
 								storeAsFile
 								maxFiles={1}
 								acceptedFileTypes={["image/png", "image/jpeg"]}
-								maxFileSize={"100KB"}
+								maxFileSize={"150KB"}
 								imageResizeTargetWidth={100}
 								imageResizeTargetHeight={100}
 								stylePanelAspectRatio={"1:1"}

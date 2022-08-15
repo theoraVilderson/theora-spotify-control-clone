@@ -11,6 +11,7 @@ const upload = multer({ storage: storage });
 async function isUserLive(req) {
 	let res = true;
 	try {
+		req.spotifyApi.setToken(req.cookies.accessToken);
 		const er = await req.spotifyApi.getMe();
 		if (er.error) throw er.error;
 	} catch (e) {
@@ -269,7 +270,63 @@ router.get("/playlists", async (req, res) => {
 
 	return res.json({ status: true, data: { result: userInfo } });
 });
+router.post("/playlist/:playlistId/tracks", async (req, res) => {
+	const { playlistId } = req.params;
 
+	const { uris = "" } = req.query;
+
+	const addToPlaylist = await req.spotifyApi.addToPlaylist(playlistId, uris);
+	const error = globalErrorHandler("COULD_NOT_SAVE_PLAYLIST", addToPlaylist);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: addToPlaylist } });
+});
+
+router
+	.route("/playlist/:playlistId/tracks")
+	.post(async (req, res) => {
+		const { playlistId } = req.params;
+
+		const { uris = "" } = req.query;
+
+		const addToPlaylist = await req.spotifyApi.addToPlaylist(
+			playlistId,
+			uris
+		);
+		const error = globalErrorHandler(
+			"COULD_NOT_SAVE_PLAYLIST",
+			addToPlaylist
+		);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: addToPlaylist } });
+	})
+	.delete(async (req, res) => {
+		const { playlistId } = req.params;
+
+		const { uris = "" } = req.query;
+
+		const addToPlaylist = await req.spotifyApi.removeFromPlaylist(
+			playlistId,
+			uris
+		);
+		const error = globalErrorHandler(
+			"COULD_NOT_SAVE_PLAYLIST",
+			addToPlaylist
+		);
+
+		if (error) {
+			return res.json(error);
+		}
+
+		return res.json({ status: true, data: { result: addToPlaylist } });
+	});
 router.get("/playlist/:playlistId", async (req, res) => {
 	const { playlistId } = req.params;
 
@@ -321,6 +378,7 @@ router.get("/playlistFullInfo/:playlistId", async (req, res) => {
 
 	return res.json({ status: true, data: { result: playlistFullInfo } });
 });
+
 router
 	.route("/playlist/:playlistId/follow")
 	.put(async (req, res) => {

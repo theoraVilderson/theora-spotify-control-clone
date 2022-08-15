@@ -54,13 +54,11 @@ function PlayList({ feedType }) {
 			: new URL(playlist?.playlistItems?.next).search.slice(1);
 
 		// force it means start in to just fetch first part
-		const query = nextLink ? "&" + nextLink : "";
+		const query = nextLink ? nextLink + "&" : "";
 
 		fetcher(
 			`/api/playlistFullInfo/${playlistId}${
-				!replace
-					? "?" + query + "&userId=" + userInfo.id
-					: "?" + "userId=" + userInfo.id
+				"?" + (!replace ? query : "") + "userId=" + userInfo.id
 			}`
 		)
 			.then((e) => {
@@ -155,6 +153,8 @@ function PlayList({ feedType }) {
 		[playlist]
 	);
 
+	const itemsArray = Object.values(playlist?.playlistItems?.items ?? {});
+
 	return (
 		<div className="playlist min-h-screen">
 			{playlist?.name ? (
@@ -224,18 +224,24 @@ function PlayList({ feedType }) {
 						</div>
 					</FeedHead>
 					<div className="playlist__songs flex flex-col">
-						{Object.values(playlist?.playlistItems?.items)
-							.length ? (
-							Object.values(
-								playlist?.playlistItems?.items
-							)?.map?.((e, k) => {
-								return (
+						{itemsArray.length && itemsArray.find((e) => e) ? (
+							itemsArray?.map?.((e, k) => {
+								return e ? (
 									<SongItem
 										key={e.id}
 										numberId={k + 1}
 										songInfo={e}
 										feedType={feedType}
 									/>
+								) : (
+									<div
+										className="hidden"
+										key={
+											Object.keys(
+												playlist?.playlistItems?.items
+											)[k]
+										}
+									></div>
 								);
 							})
 						) : (

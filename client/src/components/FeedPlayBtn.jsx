@@ -11,6 +11,13 @@ function Feed({ feedType = "Suggestion" }) {
 	const { userInfo, playerState } = globalData;
 	const fetcher = useFetcher([globalData, dispatch]);
 
+	// spotify:user:31xkeukht47l4rnpe3xaihogxv2i:collection
+	// spotify:user:31xkeukht47l4rnpe3xaihogxv2i:collection:your-episodes
+	// spotify:playlist:3VD8ep5BUBIR28Mmrs3uwE
+	// spotify:track:3VD8ep5BUBIR28Mmrs3uwE
+	// spotify:episode:3VD8ep5BUBIR28Mmrs3uwE
+	// spotify:show:3VD8ep5BUBIR28Mmrs3uwE
+	// spotify:artist:5bal1WJousVM8g27E8fhmo
 	useEffect(() => {}, []);
 
 	return (

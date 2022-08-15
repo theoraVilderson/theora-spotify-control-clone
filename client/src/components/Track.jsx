@@ -109,6 +109,7 @@ function Track({ feedType }) {
 					data: {},
 				},
 			});
+			setLyric(null);
 		}
 	}, [trackId]);
 

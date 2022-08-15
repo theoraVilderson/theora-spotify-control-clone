@@ -17,7 +17,7 @@ import { helper } from "../libs/helper";
 import PlaylistPopup from "./PlaylistPopup";
 import { useNavigate } from "react-router-dom";
 
-function UserPlayLists({ feedType }) {
+function UserPlayLists({ feedType, addToPlaylistItem, onPlaylistContext }) {
 	const { playlistId } = useParams();
 
 	const [globalData, dispatch] = useGlobalContext();
@@ -50,6 +50,7 @@ function UserPlayLists({ feedType }) {
 
 		dispatch({ type: actionTypes.SET_PLAYLISTS, payload: lastRes });
 		setNextPlaylistItemsLink(e.data.result.next);
+		console.log(e.data.result.total);
 		setTotalPlaylist(e.data.result.total);
 		setCurrentTotalPlaylist(Object.keys(lastRes).length);
 	};
@@ -111,15 +112,18 @@ function UserPlayLists({ feedType }) {
 
 	// clean last info
 	useEffect(() => {
-		if (Object.keys(playlists).length) {
+		if (Object.keys(playlists).length && !addToPlaylistItem) {
 			dispatch({ type: actionTypes.SET_PLAYLISTS, payload: {} });
 		}
 	}, [userInfo?.id]);
 
 	useEffect(() => {
-		if (!userInfo?.id) return;
+		if (!userInfo?.id || Object.keys(playlists).length) return;
 		// use forceToRestart to just update the infos like totalPlayList number
-		loadMorePlayListItems({ forceToRestart: true });
+
+		loadMorePlayListItems({
+			forceToRestart: true,
+		});
 	}, [userInfo?.id]);
 
 	const [createPlaylistDialogOpen, setCreatePlaylistDialogOpen] =
@@ -173,6 +177,11 @@ function UserPlayLists({ feedType }) {
 		}
 		// navigate("/playlist/" + newplaylist.id);
 	};
+
+	const onShowClick = () => {
+		console.log(totalPlaylist !== "");
+		setCreatePlaylistDialogOpen(totalPlaylist !== "");
+	};
 	return (
 		<div className="sidebar__playLists mb-2 flex-1 flex flex-col justify-center ">
 			{/* PlayLists */}
@@ -180,17 +189,15 @@ function UserPlayLists({ feedType }) {
 				<span className="text-xs">
 					PLAYLISTS {totalPlaylist ? `(${totalPlaylist})` : null}
 				</span>
-				<FaPlus
-					className="activeColor cursor-pointer mr-2"
-					onClick={() => {
-						setCreatePlaylistDialogOpen(
-							true && totalPlaylist != ""
-						);
-					}}
-				/>
+				{addToPlaylistItem ? null : (
+					<FaPlus
+						className="activeColor cursor-pointer mr-2"
+						onClick={onShowClick}
+					/>
+				)}
 			</h2>
 
-			{totalPlaylist != "" && createPlaylistDialogOpen ? (
+			{totalPlaylist !== "" && createPlaylistDialogOpen ? (
 				<PlaylistPopup
 					open={createPlaylistDialogOpen}
 					total={totalPlaylist}
@@ -221,6 +228,8 @@ function UserPlayLists({ feedType }) {
 									userId={userInfo?.id}
 									total={totalPlaylist}
 									onSuccess={setNewPlaylist}
+									onPlaylistContext={onPlaylistContext}
+									addToPlaylistItem={addToPlaylistItem}
 								/>
 							) : (
 								<div

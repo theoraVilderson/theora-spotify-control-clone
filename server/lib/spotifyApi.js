@@ -271,12 +271,21 @@ class SpotifyApi {
 			if (isPlaylistFollowed.error) throw isPlaylistFollowed;
 
 			const allTracksId = playListItems.items.map((e) => e.track.id);
-			const tracksLike = await this.isLikedTarget(allTracksId, "track");
-			if (tracksLike.error) throw tracksLike;
 
-			playListItems.items = playListItems.items.map((e, k) => {
-				return { ...e, track: { ...e.track, isLiked: tracksLike[k] } };
-			});
+			if (allTracksId.length) {
+				const tracksLike = await this.isLikedTarget(
+					allTracksId,
+					"track"
+				);
+				if (tracksLike.error) throw tracksLike;
+
+				playListItems.items = playListItems.items.map((e, k) => {
+					return {
+						...e,
+						track: { ...e.track, isLiked: tracksLike[k] },
+					};
+				});
+			}
 
 			return {
 				...playListInfo,
@@ -298,6 +307,45 @@ class SpotifyApi {
 			const query = querystring.stringify(data);
 			const url = `playlists/${playlistId}/tracks?${query}`;
 			const res = await this.userReq.get(url);
+			return res.data;
+		});
+	}
+	async addToPlaylist(playlistId, uris) {
+		return this.requestWrapper(async () => {
+			const data = { uris };
+			const query = querystring.stringify(data);
+			const url = `playlists/${playlistId}/tracks?${query}`;
+			const res = await this.userReq.post(url);
+			return res.data;
+		});
+	}
+	async removeFromPlaylist(playlistId, uris) {
+		return this.requestWrapper(async () => {
+			const data = uris.split(",").reduce((r, d) => {
+				const type = "tracks";
+
+				if (!r[type]) {
+					r[type] = [
+						{
+							uri: d,
+						},
+					];
+					return r;
+				}
+
+				r[type].push({
+					uri: d,
+				});
+				return r;
+			}, {});
+
+			console.log(data);
+
+			const url = `playlists/${playlistId}/tracks`;
+
+			const res = await this.userReq.delete(url, {
+				data,
+			});
 			return res.data;
 		});
 	}
@@ -508,8 +556,11 @@ class SpotifyApi {
 			items = items.filter((e) => e.type === "artist");
 			// if(items.length)
 			let url = `recommendations?`;
-			if (!items.length) {
-				url += "seed_genres=classical,alt-rock,alternative";
+
+			// use top artist for suggestions or default genres
+			//
+			if (!items?.length) {
+				url += "seed_genres=country,alternative,samba";
 			} else {
 				const targetArtist = items[~~(Math.random() * items.length)];
 				url += `seed_artists=${targetArtist.id}`;
@@ -520,16 +571,18 @@ class SpotifyApi {
 			let findArtistSeed = suggestionsTracks.data.seeds.find(
 				(e) => e.type === "artist"
 			);
+			const firstItem = suggestionsTracks?.data?.tracks?.[0];
+
 			findArtistSeed =
 				findArtistSeed?.id ??
-				suggestionsTracks?.data?.tracks?.[0]?.artists?.[0]?.id;
+				firstItem?.artists?.[0]?.id ??
+				(firstItem?.type === "artist" ? firstItem?.id : null);
 
 			const targetArtist = await this.getArtist(findArtistSeed);
 			if (targetArtist.error) throw targetArtist;
 
-			console.log(suggestionsTracks.data, targetArtist);
 			const isFollowed = await this.isTargetFollowed(
-				suggestionsTracks.data.seeds[0].id,
+				findArtistSeed,
 				"artist"
 			);
 			if (isFollowed.error) throw isFollowed;

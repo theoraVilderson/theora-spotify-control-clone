@@ -12,6 +12,7 @@ import LinkWithBorder from "./LinkWithBorder";
 import Follow from "./Follow";
 import FeedHead from "./FeedHead";
 import FeedPlayBtn from "./FeedPlayBtn";
+import { helper } from "../libs/helper";
 
 import "./Suggestion.css";
 function Suggestion({ feedType }) {
@@ -23,19 +24,16 @@ function Suggestion({ feedType }) {
 
 	const activeMusicId = activeMusic?.id;
 	const [suggestions, setSuggestions] = useState({});
-	const backgroundImg = useMemo(() => {
-		const targetImage = suggestions?.targetArtist?.images?.reduce?.(
-			(e, n) => {
-				return e.width + e.height <= n.width + n.height ? n : e;
-			}
-		);
-		return targetImage?.url;
-	}, [suggestions]);
+
+	const backgroundImg = useMemo(
+		() => helper.getHighSizeImage(suggestions?.targetArtist?.images),
+		[suggestions]
+	);
 	const [isFollowed, setIsFollowed] = useState(false);
 	const [loadingPlaylistDone, setLoadingPlaylistDone] = useState(false);
 
 	useEffect(() => {
-		if (!activeMusicId && activeMusic !== "") return;
+		if (Object.keys(playerQueue).length) return;
 		setLoadingPlaylistDone(false);
 		fetcher("/api/suggestions")
 			.then((e) => {
@@ -62,7 +60,7 @@ function Suggestion({ feedType }) {
 			.finally(() => {
 				setLoadingPlaylistDone(true);
 			});
-	}, [activeMusicId, activeMusic]);
+	}, [activeMusicId]);
 
 	return (
 		<div className="suggestions">
