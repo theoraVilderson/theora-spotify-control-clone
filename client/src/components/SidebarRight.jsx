@@ -11,6 +11,7 @@ import useFetcher from "../hooks/fetcher";
 import { useEffect, useState } from "react";
 import "./SidebarRight.css";
 import Like from "./Like";
+import { AiOutlineDoubleRight } from "@react-icons/all-files/ai/AiOutlineDoubleRight";
 
 export function SidebarRightItem({ children }) {
 	return (
@@ -49,42 +50,65 @@ function SidebarRight({ feedType }) {
 		setLike(isLiked);
 	}, [isLiked, activeMusicId]);
 
+	const [isSideBarOpen, setIsSideBarOpen] = useState(true);
+
+	const sideBarToggle = () => {
+		setIsSideBarOpen(!isSideBarOpen);
+	};
 	return (
-		<aside className="sidebarRight sticky top-0 justify-between py-5 items-center flex-col min-w-[50px] w-2/5 hidden md:flex  max-w-[100px] md:w-2/12 min-h-[500px] h-screen">
-			<div className="flex flex-col justify-center items-center">
-				<SidebarRightItem className="flex flex-col justify-center items-center">
-					<FaCrown className={`${!isFree ? "selectedColor" : ""}`} />
-					{isFree ? <span className="text-xs">Go Pro</span> : null}
-				</SidebarRightItem>
-
-				<SidebarRightItem>
-					<span className="notification active animate-ping"></span>
-					<FaBell />
-				</SidebarRightItem>
-				{!activeMusicId ? null : (
-					<SidebarRightItem>
-						<Like item={activeMusic} feedType={feedType} />
+		<>
+			<div
+				className={`flex md:hidden bg-blue-300 sticky -ml-[30px]  p-3 text-white z-20 ${
+					isSideBarOpen ? "right-[50px] " : "-rotate-180 right-0"
+				}  top-1/2 -translate-y-[50%] h-10`}
+				onClick={sideBarToggle}
+			>
+				<AiOutlineDoubleRight />
+			</div>
+			<aside
+				className={`${
+					isSideBarOpen ? "!flex  z-[20] activeBgColor" : ""
+				} sidebarRight sticky right-0 top-0 justify-between py-5 items-center flex-col min-w-[50px] w-2/5 hidden md:flex  max-w-[100px] md:w-2/12 min-h-[500px] h-screen`}
+			>
+				<div className="flex flex-col justify-center items-center">
+					<SidebarRightItem className="flex flex-col justify-center items-center">
+						<FaCrown
+							className={`${!isFree ? "selectedColor" : ""}`}
+						/>
+						{isFree ? (
+							<span className="text-xs">Go Pro</span>
+						) : null}
 					</SidebarRightItem>
-				)}
-			</div>
-			<div className="flex flex-col justify-center items-center">
-				<SidebarRightItem>
-					<FaSun />
-				</SidebarRightItem>
 
-				<SidebarRightItem>
-					<FaCogs />
-				</SidebarRightItem>
-
-				<SidebarRightItem>
-					{!userImage ? (
-						<FaUserAstronaut />
-					) : (
-						<img src={userImage} alt="userAvatar" />
+					<SidebarRightItem>
+						<span className="notification active animate-ping"></span>
+						<FaBell />
+					</SidebarRightItem>
+					{!activeMusicId ? null : (
+						<SidebarRightItem>
+							<Like item={activeMusic} feedType={feedType} />
+						</SidebarRightItem>
 					)}
-				</SidebarRightItem>
-			</div>
-		</aside>
+				</div>
+				<div className="flex flex-col justify-center items-center">
+					<SidebarRightItem>
+						<FaSun />
+					</SidebarRightItem>
+
+					<SidebarRightItem>
+						<FaCogs />
+					</SidebarRightItem>
+
+					<SidebarRightItem>
+						{!userImage ? (
+							<FaUserAstronaut />
+						) : (
+							<img src={userImage} alt="userAvatar" />
+						)}
+					</SidebarRightItem>
+				</div>
+			</aside>
+		</>
 	);
 }
 
