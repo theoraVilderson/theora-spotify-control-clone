@@ -13,30 +13,13 @@ import Like from "./Like";
 import Follow from "./Follow";
 import LinkWithBorder from "./LinkWithBorder";
 import UserPlayLists from "./UserPlayLists";
+import { copyText, playlistActions } from "./FeedHead";
+
+import ContextMenu from "./ContextMenu";
 
 import { FaLock } from "@react-icons/all-files/fa/FaLock";
 import { FaUnlock } from "@react-icons/all-files/fa/FaUnlock";
 import { GoCheck } from "@react-icons/all-files/go/GoCheck";
-
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import ListItem from "@mui/material/ListItem";
-import Typography from "@mui/material/Typography";
-
-import { styled } from "@mui/material/styles";
-import Tooltip, { tooltipClasses } from "@mui/material/Tooltip";
-
-const HtmlTooltip = styled(({ className, ...props } = {}) => (
-	<Tooltip {...props} classes={{ popper: className }} />
-))(({ theme }) => ({
-	[`& .${tooltipClasses.tooltip}`]: {
-		backgroundColor: "#000",
-		maxWidth: "250px",
-		minWidth: "100px",
-		width: "30vw",
-		fontSize: theme.typography.pxToRem(12),
-	},
-}));
 
 function SongItem({ songInfo, numberId, feedType, action = true }) {
 	const [globalData, dispatch] = useGlobalContext();
@@ -121,7 +104,7 @@ function SongItem({ songInfo, numberId, feedType, action = true }) {
 	const onSelectSong = () => {
 		if (isActiveSong || isReuqstingToSongPlay) return;
 
-		const uri = `spotify:${songData.type}:${id}`;
+		const uri = `${songData.uri}`;
 
 		const uriType = ["track", "episode"].includes(songData.type)
 			? "uris"
@@ -144,47 +127,6 @@ function SongItem({ songInfo, numberId, feedType, action = true }) {
 			.finally(() => {
 				setIsReuqstingToSongPlay(false);
 			});
-	};
-
-	const [contextMenu, setContextMenu] = useState(null);
-
-	const handleContextMenu = (event) => {
-		event.preventDefault();
-		setContextMenu(
-			contextMenu === null
-				? {
-						mouseX: event.clientX + 2,
-						mouseY: event.clientY - 6,
-				  }
-				: // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
-				  // Other native context menus might behave different.
-				  // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
-				  null
-		);
-	};
-
-	const handleCloseContextMenu = (action = async () => {}) => {
-		return async (...args) => {
-			typeof action === "function" && (await action(...args));
-			setContextMenu(null);
-		};
-	};
-	const copyText = (value) => {
-		const copyToClipboardWithElm = (val) => {
-			const textField = document.createElement("textarea");
-			textField.innerText = val;
-			document.body.appendChild(textField);
-			textField.select();
-			document.execCommand("copy");
-			textField.remove();
-			return true;
-		};
-		const copyToClipboardWithNavigator = (val) =>
-			navigator.clipboard.writeText(val);
-
-		return window.navigator
-			? copyToClipboardWithNavigator(value)
-			: copyToClipboardWithElm(value);
 	};
 	const copyTargetlink = () => {
 		const pathURL = `${songData.type}/${songData.id}`;
@@ -242,80 +184,44 @@ function SongItem({ songInfo, numberId, feedType, action = true }) {
 	};
 
 	return (
-		<div
+		<ContextMenu
 			className={`song  flex flex-col sm:flex-row justify-between cursor-pointer group ${
 				isActiveSong ? "selectedColor" : "activeColorHover"
 			} `}
 			onDoubleClick={onSelectSong}
-			onContextMenu={handleContextMenu}
 			style={{ cursor: "context-menu" }}
+			type={feedType}
+			menuItems={[
+				{
+					title: "copy",
+					active: true,
+					type: feedType,
+					action: copyTargetlink,
+				},
+				{
+					title:
+						feedType !== "Playlist"
+							? "Add To PlayList >"
+							: "Delete From PlayList",
+					active: true,
+					type: ["Playlist", "Album", "Show"],
+					action: removeToPlaylist,
+					actionType: feedType !== "Playlist" ? "submenu" : null,
+					submenu:
+						feedType !== "Playlist"
+							? (handleCloseContextMenu) => (
+									<UserPlayLists
+										feedType={feedType}
+										addToPlaylistItem={songData}
+										onPlaylistContext={handleCloseContextMenu(
+											addToPlaylist
+										)}
+									/>
+							  )
+							: null,
+				},
+			]}
 		>
-			<Menu
-				open={contextMenu !== null}
-				onClose={handleCloseContextMenu()}
-				anchorReference="anchorPosition"
-				anchorPosition={
-					contextMenu !== null
-						? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-						: undefined
-				}
-				sx={{
-					"& ul,& li": {
-						color: "var(--text-base)",
-						backgroundColor: "var(--background-base)",
-					},
-					"& ul": {
-						padding: "0",
-					},
-					"& li:hover": {
-						backgroundColor: "rgba(255,255,255,.3)",
-					},
-				}}
-			>
-				<MenuItem
-					onClick={handleCloseContextMenu(copyTargetlink)}
-					className="activeColor activeBgColor"
-				>
-					Copy
-				</MenuItem>
-				{["episode", "track"].includes(songData.type) ? (
-					<MenuItem
-						disableRipple
-						className="activeColor activeBgColor w-[200px] h-8 !p-0 !px-3  "
-					>
-						{feedType !== "Playlist" ? (
-							<HtmlTooltip
-								placement="right"
-								className="activeColor activeBgColor"
-								title={
-									<>
-										<UserPlayLists
-											feedType={feedType}
-											addToPlaylistItem={songData}
-											onPlaylistContext={handleCloseContextMenu(
-												addToPlaylist
-											)}
-										/>
-									</>
-								}
-							>
-								<button className="flex w-full h-full items-center ">
-									Add To PlayList >
-								</button>
-							</HtmlTooltip>
-						) : (
-							<button
-								className="flex w-full h-full items-center "
-								onClick={handleCloseContextMenu(() =>
-									removeToPlaylist()
-								)}
-							>
-								Delete From PlayList
-							</button>
-						)}
-					</MenuItem>
-				) : null}
-			</Menu>
 			<div className="flex gap-2 p-3 flex-col sm:flex-row items-center flex-wrap sm:flex-nowrap sm:items-center">
 				<div
 					className={`w-full sm:w-10 flex justify-center items-center text-2xl sm:text-sm shrink-0`}
@@ -428,7 +334,7 @@ function SongItem({ songInfo, numberId, feedType, action = true }) {
 					)}
 				</div>
 			</div>
-		</div>
+		</ContextMenu>
 	);
 }
 

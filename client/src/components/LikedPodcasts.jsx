@@ -5,6 +5,7 @@ function LikedPodcasts({ feedType }) {
 			feedType={feedType}
 			target="LikedPodcasts"
 			targetType="episode"
+			contextType="yourepisodes"
 		/>
 	);
 }

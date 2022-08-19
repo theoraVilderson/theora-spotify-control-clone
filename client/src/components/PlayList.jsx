@@ -16,6 +16,7 @@ import { FaRegHeart } from "@react-icons/all-files/fa/FaRegHeart";
 import { IoMdHeart } from "@react-icons/all-files/io/IoMdHeart";
 import { useParams, Link } from "react-router-dom";
 import NotFound from "./NotFound";
+import FeedPlayBtn from "./FeedPlayBtn";
 import { helper } from "../libs/helper";
 
 function PlayList({ feedType }) {
@@ -192,20 +193,7 @@ function PlayList({ feedType }) {
 						</div>
 
 						<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
-							<button
-								className=" w-20 h-12 activeColor rounded-full"
-								style={{
-									backgroundColor:
-										"var(--text-bright-accent)",
-								}}
-								onClick={() => {
-									document
-										.querySelector(".player_playing")
-										?.click?.();
-								}}
-							>
-								Play
-							</button>
+							<FeedPlayBtn item={playlist} feedType={feedType} />
 
 							<Follow
 								target={playlist}
@@ -225,25 +213,29 @@ function PlayList({ feedType }) {
 					</FeedHead>
 					<div className="playlist__songs flex flex-col">
 						{itemsArray.length && itemsArray.find((e) => e) ? (
-							itemsArray?.map?.((e, k) => {
-								return e ? (
-									<SongItem
-										key={e.id}
-										numberId={k + 1}
-										songInfo={e}
-										feedType={feedType}
-									/>
-								) : (
-									<div
-										className="hidden"
-										key={
-											Object.keys(
-												playlist?.playlistItems?.items
-											)[k]
-										}
-									></div>
-								);
-							})
+							itemsArray?.map?.(
+								function (e, k) {
+									return e ? (
+										<SongItem
+											key={e.id}
+											numberId={++this.counter}
+											songInfo={e}
+											feedType={feedType}
+										/>
+									) : (
+										<div
+											className="hidden"
+											key={
+												Object.keys(
+													playlist?.playlistItems
+														?.items
+												)[k]
+											}
+										></div>
+									);
+								},
+								{ counter: 0 }
+							)
 						) : (
 							<NotFound
 								show={!playlistLoading}

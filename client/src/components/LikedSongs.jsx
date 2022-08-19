@@ -5,6 +5,7 @@ function LikedSongs({ feedType }) {
 			feedType={feedType}
 			target="LikedSongs"
 			targetType="track"
+			contextType="collection"
 		/>
 	);
 }

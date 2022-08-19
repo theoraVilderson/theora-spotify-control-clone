@@ -226,6 +226,7 @@ function Sidebar({ feedType }) {
 						onSliderChange={([val]) => {
 							setRange(val);
 						}}
+						disabled={isFree}
 						step={1}
 						min={0}
 						max={100}

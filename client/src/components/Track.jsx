@@ -27,11 +27,10 @@ function Track({ feedType }) {
 
 	const track = allPlayerQueue[feedType] ?? {};
 	const [trackLoading, setTrackLoading] = useState(false);
-	const [lyric, setLyric] = useState("");
+	const [lyric, setLyric] = useState(null);
 
 	const [lyricsLoading, setLyricsLoading] = useState(false);
 
-	console.log(track);
 	const backgroundImg = useMemo(
 		() => helper.getHighSizeImage(track?.album?.images),
 		[track]
@@ -84,7 +83,7 @@ function Track({ feedType }) {
 		fetcher(`/api/track/lyrics?${query}`)
 			.then((e) => {
 				if (e.data.error) {
-					setLyric(null);
+					setLyric("");
 					return;
 				}
 				setLyric(e.data.result);
@@ -179,7 +178,7 @@ function Track({ feedType }) {
 							</div>
 						</div>
 						<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
-							<FeedPlayBtn />
+							<FeedPlayBtn item={track} feedType={feedType} />
 							<div className="scale-150 cursor-pointer">
 								<Like item={track} feedType={feedType} />
 							</div>
@@ -187,13 +186,13 @@ function Track({ feedType }) {
 					</FeedHead>
 
 					<div className="track__lyric flex flex-col whitespace-pre p-5">
-						{lyric != null ? (
+						{lyric ? (
 							<ArrangeLyrics text={lyric} />
-						) : (
+						) : lyric === "" ? (
 							<h1 className="flex justify-center items-center">
 								No Lyrics Found !
 							</h1>
-						)}
+						) : null}
 					</div>
 				</>
 			) : (

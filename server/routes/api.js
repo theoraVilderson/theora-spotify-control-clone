@@ -822,6 +822,35 @@ router.get("/player/currently-playing", async (req, res) => {
 	return res.json({ status: true, data: { result: currentlyPlaying } });
 });
 
+router.get("/player/devices", async (req, res) => {
+	const devices = await req.spotifyApi.getDevices();
+	const error = globalErrorHandler("COULD_NOT_GET_DEVICES_INFO", devices);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: devices } });
+});
+
+router.put("/player/transform-playback", async (req, res) => {
+	const { play = true, deviceId = null } = req.query;
+
+	const setTransfromPlayback = await req.spotifyApi.transformPlayback({
+		play,
+		deviceId: deviceId ? deviceId.split(",") : [],
+	});
+	const error = globalErrorHandler(
+		"COULD_NOT_SET_TRNSFORM_PLAYBACK",
+		setTransfromPlayback
+	);
+
+	if (error) {
+		return res.json(error);
+	}
+
+	return res.json({ status: true, data: { result: setTransfromPlayback } });
+});
 router.put("/player/volume", async (req, res) => {
 	const { volume_percent = "50" } = req.query;
 	const changeVolume = await req.spotifyApi.setPlayerVolume(volume_percent);

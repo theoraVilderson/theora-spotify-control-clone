@@ -40,7 +40,6 @@ function Suggestion({ feedType }) {
 				if (e.data.error) {
 					return;
 				}
-				console.log(e.data.result);
 
 				const res = e.data.result.tracks.reduce((e, k, key) => {
 					e[k.id] = k;

@@ -206,7 +206,7 @@ function Artist({ feedType, route }) {
 							</div>
 						</div>
 						<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
-							<FeedPlayBtn />
+							<FeedPlayBtn item={artist} feedType={feedType} />
 							<div className=" cursor-pointer">
 								<Follow
 									target={artist}

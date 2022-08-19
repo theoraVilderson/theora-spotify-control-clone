@@ -115,7 +115,7 @@ function UserPlayLists({ feedType, addToPlaylistItem, onPlaylistContext }) {
 		if (Object.keys(playlists).length && !addToPlaylistItem) {
 			dispatch({ type: actionTypes.SET_PLAYLISTS, payload: {} });
 		}
-	}, [userInfo?.id]);
+	}, []);
 
 	useEffect(() => {
 		if (!userInfo?.id || Object.keys(playlists).length) return;
@@ -141,8 +141,6 @@ function UserPlayLists({ feedType, addToPlaylistItem, onPlaylistContext }) {
 
 		newData.data = { [newplaylist.id]: newplaylist };
 
-		console.log(newplaylist);
-
 		dispatch({
 			type: actionTypes.SET_PLAYLIST,
 			payload: newData,
@@ -165,7 +163,6 @@ function UserPlayLists({ feedType, addToPlaylistItem, onPlaylistContext }) {
 			queue.playlists.items[newplaylist.id] != null
 		) {
 			queue.playlists.items[newplaylist.id] = newplaylist;
-			console.log("here", queue.playlists);
 
 			dispatch({
 				type: actionTypes.SET_PLAYER_QUEUE,
@@ -179,7 +176,6 @@ function UserPlayLists({ feedType, addToPlaylistItem, onPlaylistContext }) {
 	};
 
 	const onShowClick = () => {
-		console.log(totalPlaylist !== "");
 		setCreatePlaylistDialogOpen(totalPlaylist !== "");
 	};
 	return (
@@ -212,7 +208,7 @@ function UserPlayLists({ feedType, addToPlaylistItem, onPlaylistContext }) {
 				onUpdate={loadNewPlayListItem}
 			>
 				<div>
-					{playlistsArray?.length ? (
+					{playlistsArray.length && playlistsArray.find((e) => e) ? (
 						playlistsArray.map((item, key) => {
 							// if item is deleted then use empty div
 							// (for having place for undo deleting)

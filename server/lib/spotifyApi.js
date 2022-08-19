@@ -673,7 +673,7 @@ class SpotifyApi {
 			return res.data;
 		});
 	}
-	async getPlayerState(type = "episode") {
+	async getPlayerState(type) {
 		return this.requestWrapper(async () => {
 			const query = type ? `additional_types=${type}` : "";
 			const url = `me/player${query ? "?" + query : ""}`;
@@ -771,6 +771,32 @@ class SpotifyApi {
 			});
 
 			return { [type]: true };
+		});
+	}
+	async getDevices() {
+		return this.requestWrapper(async () => {
+			const url = `me/player/devices`;
+
+			const res = await this.userReq.get(url);
+
+			return res.data;
+		});
+	}
+	async setTransfromPlayback({ play, deviceId }) {
+		return this.requestWrapper(async () => {
+			const url = `me/player`;
+
+			const data = {
+				device_id: deviceId,
+				play,
+			};
+			const res = await this.userReq.put(url, data, {
+				validateStatus: function (status) {
+					return status >= 200 && status <= 204; // default
+				},
+			});
+
+			return res.data;
 		});
 	}
 	async getTrack(trackId) {

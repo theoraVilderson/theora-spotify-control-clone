@@ -104,6 +104,7 @@ function Player({ feedType }) {
 	}, [activeMusic]);
 
 	useEffect(() => {
+		if (!isFree) return false;
 		let timer = true;
 		const action = (timer = setTimeout(function time() {
 			if (timer == null) return 1;
@@ -291,9 +292,17 @@ function Player({ feedType }) {
 			.finally(() => {});
 	};
 
+	const initialPlayer = useEffect(() => {
+		if (isFree || window.onSpotifyWebPlaybackSDKReady) return;
+		window.onSpotifyWebPlaybackSDKReady = () => {
+			// this.
+		};
+		/// add player sdk
+	}, [isFree]);
+
 	return !activeMusicItem ? null : (
 		<div className="flex flex-col player activeBgColor justify-start sticky  bottom-0 min-h-20">
-			<div className="player__head w-full">
+			<div className="player__head w-full ">
 				<SliderRange
 					onSliderChange={([val]) => {
 						setRange(val);
@@ -315,7 +324,7 @@ function Player({ feedType }) {
 					updateOnDefaultChange={updateOnDefaultChange}
 				/>
 			</div>
-			<div className="flex-1 flex items-center justify-between xl:justify-around p-1  flex-wrap gap-3">
+			<div className="flex-1 flex items-center justify-center sm:justify-between xl:justify-around p-1  flex-wrap gap-3">
 				<div className="flex items-center w-full sm:w-auto justify-around">
 					<div>
 						<img

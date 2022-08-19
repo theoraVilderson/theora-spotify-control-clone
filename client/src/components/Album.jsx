@@ -186,7 +186,7 @@ function Album({ feedType, route }) {
 							</div>
 						</div>
 						<div className="flex items-center justify-center gap-5 self-end lg:self-auto  w-full lg:justify-end">
-							<FeedPlayBtn />
+							<FeedPlayBtn feedType={feedType} item={album} />
 							<div className="scale-150 cursor-pointer">
 								<Like item={album} feedType={feedType} />
 							</div>

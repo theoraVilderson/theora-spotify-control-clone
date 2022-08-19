@@ -18,9 +18,10 @@ import heartImage from "../imgs/heart.png";
 import { useParams } from "react-router-dom";
 
 import NotFound from "./NotFound";
+
 import { helper } from "../libs/helper";
 
-function LikedTarget({ feedType, target, targetType }) {
+function LikedTarget({ feedType, target, targetType, contextType }) {
 	const [globalData, dispatch] = useGlobalContext();
 	const { userInfo, playerQueue: allPlayerQueue, activeMusic } = globalData;
 	const fetcher = useFetcher([globalData, dispatch]);
@@ -117,6 +118,7 @@ function LikedTarget({ feedType, target, targetType }) {
 	useEffect(() => {
 		if (likedTarget.items == null) loadMoreEpisodeItems();
 	}, [likedTarget]);
+	const contextTypes = ["collection", "yourepisodes"];
 	return (
 		<div className="likedTarget">
 			{likedTarget?.total != null &&
@@ -150,6 +152,16 @@ function LikedTarget({ feedType, target, targetType }) {
 									) : null}
 								</span>
 							</div>
+							{contextTypes.includes(contextType) ? (
+								<FeedPlayBtn
+									item={{
+										id: userInfo?.id,
+										type: contextType,
+										...likedTarget,
+									}}
+									feedType={feedType}
+								/>
+							) : null}
 						</div>
 					</FeedHead>
 					<div className="p-3">
