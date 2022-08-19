@@ -11,8 +11,8 @@
 # production
 /build
 
-otherApp
-/otherApp
+otherApps
+/otherApps
 # misc
 .DS_Store
 .env
