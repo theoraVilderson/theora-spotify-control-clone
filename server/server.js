@@ -12,7 +12,7 @@ const SpotifyApi = require("./lib/spotifyApi");
 
 if (isOnBuild) {
 	console.log("exprses static in build");
-	app.use(express.static("../client/build"));
+	app.use(express.static(path.resolve(__dirname, "../client/build")));
 } else {
 	require("dotenv").config();
 }
@@ -39,7 +39,7 @@ app.use(
 if (isOnBuild) {
 	console.log("server static in build");
 
-	app.get("*", (req, res) => {
+	app.use((req, res, next) => {
 		console.log("server redirect build");
 		res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
 	});
