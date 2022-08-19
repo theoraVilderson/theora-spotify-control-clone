@@ -73,7 +73,6 @@ function Artist({ feedType, route }) {
 					onErrorHandler(e);
 					return;
 				}
-				console.log("artist", e.data.result);
 				setArtist(e.data.result);
 			})
 			.catch(onErrorHandler)
@@ -108,7 +107,6 @@ function Artist({ feedType, route }) {
 	}, [artist, route]);
 
 	const loadAlbumItems = (nextLink) => {
-		console.log(!artist.name, artistAlbumsLoading, route !== "albums");
 		if (!artist.name || artistAlbumsLoading || route !== "albums") return;
 
 		const theNextLink = !nextLink
@@ -158,7 +156,6 @@ function Artist({ feedType, route }) {
 	useEffect(() => {
 		if (!updateCountAlbum) return;
 
-		console.log(artistAlbums?.next);
 		loadAlbumItems(artistAlbums?.next);
 	}, [updateCountAlbum]);
 	useEffect(() => {

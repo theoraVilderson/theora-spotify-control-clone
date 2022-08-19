@@ -11,6 +11,7 @@ import useFetcher from "../hooks/fetcher";
 import { useEffect, useState } from "react";
 import "./SidebarRight.css";
 import Like from "./Like";
+import ContextMenu from "./ContextMenu";
 import { AiOutlineDoubleRight } from "@react-icons/all-files/ai/AiOutlineDoubleRight";
 
 export function SidebarRightItem({ children }) {
@@ -54,6 +55,17 @@ function SidebarRight({ feedType }) {
 
 	const sideBarToggle = () => {
 		setIsSideBarOpen(!isSideBarOpen);
+	};
+	const logout = async () => {
+		let res;
+		try {
+			res = await fetcher("/api/logout");
+		} catch (e) {
+			return 0;
+		}
+		if (res.data.error) return 1;
+
+		dispatch({ type: actionTypes.LOG_OUT_USER });
 	};
 	return (
 		<>
@@ -100,11 +112,25 @@ function SidebarRight({ feedType }) {
 					</SidebarRightItem>
 
 					<SidebarRightItem>
-						{!userImage ? (
-							<FaUserAstronaut />
-						) : (
-							<img src={userImage} alt="userAvatar" />
-						)}
+						<ContextMenu
+							style={{ cursor: "context-menu" }}
+							type={feedType}
+							menuItems={[
+								{
+									title: "logout",
+									active: true,
+									type: feedType,
+									action: logout,
+								},
+							]}
+							clickable
+						>
+							{!userImage ? (
+								<FaUserAstronaut />
+							) : (
+								<img src={userImage} alt="userAvatar" />
+							)}
+						</ContextMenu>
 					</SidebarRightItem>
 				</div>
 			</aside>

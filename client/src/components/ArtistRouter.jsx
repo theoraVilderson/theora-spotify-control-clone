@@ -10,8 +10,6 @@ function ArtistRouter({ feedType }) {
 	const defaultMenu = "top-songs";
 	subMenuName = allValidSub.includes(subMenuName) ? subMenuName : defaultMenu;
 
-	console.log(subMenuName);
-
 	return <Artist feedType={feedType} route={subMenuName} />;
 }
 export default ArtistRouter;
