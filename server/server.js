@@ -4,7 +4,7 @@ const port = process.env.PORT || 3001;
 const path = require("path");
 var cookieParser = require("cookie-parser");
 
-const isOnBuild = process.env.PORT != null;
+const isOnBuild = process.env.ENV != "development";
 
 const SpotifyApi = require("./lib/spotifyApi");
 
