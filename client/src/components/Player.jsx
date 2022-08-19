@@ -44,7 +44,7 @@ function Player({ feedType }) {
 	);
 
 	const stateChecker = () => {
-		fetcher(`/api/player/`)
+		return fetcher(`/api/player/`)
 			.then((e) => {
 				if (e.data.error) {
 					e.data.error === "COULD_NOT_GET_PLAYER_STATE" &&
@@ -106,12 +106,12 @@ function Player({ feedType }) {
 	useEffect(() => {
 		if (!isFree) return false;
 		let timer = true;
-		const action = (timer = setTimeout(function time() {
+		const action = (timer = setTimeout(async function time() {
 			if (timer == null) return 1;
 
-			stateChecker();
+			await stateChecker();
 
-			return (timer = setTimeout(time, 10000));
+			return (timer = setTimeout(time, 500));
 		}, 500));
 
 		return () => {
