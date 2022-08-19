@@ -128,7 +128,11 @@ function SidebarRight({ feedType }) {
 							{!userImage ? (
 								<FaUserAstronaut />
 							) : (
-								<img src={userImage} alt="userAvatar" />
+								<img
+									src={userImage}
+									className="w-[40px] h-[40px] border-solid cursor-pointer"
+									alt="userAvatar"
+								/>
 							)}
 						</ContextMenu>
 					</SidebarRightItem>
