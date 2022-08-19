@@ -11,6 +11,7 @@ const SpotifyApi = require("./lib/spotifyApi");
 /// if we are on build we need to do this for static assets
 
 if (isOnBuild) {
+	console.log("exprses static in build");
 	app.use(express.static(path.resolve(__dirname + "../client/build")));
 } else {
 	require("dotenv").config();
@@ -36,7 +37,10 @@ app.use(
 );
 
 if (isOnBuild) {
+	console.log("server static in build");
+
 	app.get("*", (req, res) => {
+		console.log("server redirect build");
 		res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
 	});
 }
