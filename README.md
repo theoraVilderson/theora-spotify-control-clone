@@ -76,4 +76,4 @@
 
 ## (because technically you should be added to allowed user to use from developer dashboard!)
 
-## But you can watch demo gif!
+## But you can watch demo Gif!
