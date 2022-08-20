@@ -82,9 +82,9 @@ function App() {
     }
   }, [accessToken]);
 
-  useEffect(() => {
-    console.log(globalData);
-  }, [globalData]);
+  // useEffect(() => {
+  //   console.log(globalData);
+  // }, [globalData]);
 
   const Page = accessToken ? Home : Login;
 

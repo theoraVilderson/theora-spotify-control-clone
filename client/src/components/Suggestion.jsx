@@ -33,7 +33,6 @@ function Suggestion({ feedType }) {
 	const [loadingPlaylistDone, setLoadingPlaylistDone] = useState(false);
 
 	useEffect(() => {
-		if (Object.keys(playerQueue).length) return;
 		setLoadingPlaylistDone(false);
 		fetcher("/api/suggestions")
 			.then((e) => {

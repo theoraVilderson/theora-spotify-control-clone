@@ -50,7 +50,6 @@ function UserPlayLists({ feedType, addToPlaylistItem, onPlaylistContext }) {
 
 		dispatch({ type: actionTypes.SET_PLAYLISTS, payload: lastRes });
 		setNextPlaylistItemsLink(e.data.result.next);
-		console.log(e.data.result.total);
 		setTotalPlaylist(e.data.result.total);
 		setCurrentTotalPlaylist(Object.keys(lastRes).length);
 	};

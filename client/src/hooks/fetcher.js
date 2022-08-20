@@ -32,7 +32,7 @@ export default function useFetcher([, dispatch] = []) {
 					try {
 						res = await fetcher("/api/updateTokens");
 					} catch (e) {
-						console.log(e);
+						// console.log(e);
 
 						return await fetcher(...args);
 					}
@@ -51,7 +51,7 @@ export default function useFetcher([, dispatch] = []) {
 					// null means go to login!
 					return null;
 				} else if (e.data.error) {
-					console.error("Error: " + e.data.error);
+					// console.error("Error: " + e.data.error);
 				}
 
 				return e;
