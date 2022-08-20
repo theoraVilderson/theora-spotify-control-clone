@@ -76,4 +76,6 @@
 
 ## (because technically you should be added to allowed user to use from developer dashboard!)
 
-## But you can watch demo Gif!
+## But you can watch demo!
+
+[youtube-spotify-demo-video](https://www.youtube.com/watch?v=KTouiefvXxM "youtube spotify demo video")
