@@ -204,7 +204,11 @@ function SongItem({ songInfo, numberId, feedType, action = true }) {
 							? "Add To PlayList >"
 							: "Delete From PlayList",
 					active: true,
-					type: ["Playlist", "Album", "Show"],
+					type: [
+						["track", "show"].includes(songData.type)
+							? feedType
+							: "nothing",
+					],
 					action: removeToPlaylist,
 					actionType: feedType !== "Playlist" ? "submenu" : null,
 					submenu:

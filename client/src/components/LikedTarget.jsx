@@ -64,7 +64,7 @@ function LikedTarget({ feedType, target, targetType, contextType }) {
 		});
 	};
 
-	const loadMoreEpisodeItems = () => {
+	const loadMoreEpisodeItems = (fromStart) => {
 		if (likedTargetLoading) return;
 
 		setLikedTargetLoading(true);
@@ -75,7 +75,7 @@ function LikedTarget({ feedType, target, targetType, contextType }) {
 			: new URL(likedTarget?.next).search.slice(1);
 
 		// force it means start in to just fetch first part
-		const query = nextLink ? "?" + nextLink : "";
+		const query = nextLink && !fromStart ? "?" + nextLink : "";
 
 		const url = `/api/likedTarget/${targetType}${query}`;
 
@@ -118,6 +118,9 @@ function LikedTarget({ feedType, target, targetType, contextType }) {
 	useEffect(() => {
 		if (likedTarget.items == null) loadMoreEpisodeItems();
 	}, [likedTarget]);
+	useEffect(() => {
+		loadMoreEpisodeItems(true);
+	}, [targetType]);
 	const contextTypes = ["collection", "yourepisodes"];
 	return (
 		<div className="likedTarget">
