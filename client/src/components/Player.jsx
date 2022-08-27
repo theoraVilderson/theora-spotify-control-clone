@@ -104,14 +104,13 @@ function Player({ feedType }) {
 	}, [activeMusic]);
 
 	useEffect(() => {
-		if (!isFree) return false;
 		let timer = true;
 		const action = (timer = setTimeout(async function time() {
 			if (timer == null) return 1;
 
 			await stateChecker();
 
-			return (timer = setTimeout(time, !playerQueue ? 5000 : 500));
+			return (timer = setTimeout(time, playerQueue ? 500 : 5000));
 		}, 500));
 
 		return () => {
