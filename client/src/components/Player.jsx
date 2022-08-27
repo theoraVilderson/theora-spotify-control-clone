@@ -111,7 +111,7 @@ function Player({ feedType }) {
 
 			await stateChecker();
 
-			return (timer = setTimeout(time, playerQueue ? 500 : 5000));
+			return (timer = setTimeout(time, !playerQueue ? 5000 : 500));
 		}, 500));
 
 		return () => {
